@@ -43,6 +43,7 @@ void gs_opengl_internal_unbind_program();
 void gs_opengl_internal_bind_layout(GsVtxLayout *layout);
 void gs_opengl_internal_unbind_layout();
 void gs_opengl_internal_bind_state();
+void gs_opengl_internal_bind_layout_state();
 
 // buffer
 void gs_opengl_create_buffer(GsBuffer *buffer);

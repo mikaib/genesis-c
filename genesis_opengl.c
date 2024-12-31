@@ -3,6 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define GS_OPENGL_BIND_BUFFER(target, requested, bound) \
+    if (requested != bound) { \
+        if (requested != NULL) { \
+            glBindBuffer(target, *(GLuint*)requested->handle); \
+        } else { \
+            glBindBuffer(target, 0); \
+        } \
+        bound = requested; \
+    }
+
 #if defined(_WIN32)
     #include <windows.h>
     #define GS_OPENGL_PLATFORM_IMPL
@@ -123,57 +133,44 @@ int gs_opengl_get_buffer_intent(GsBufferIntent intent) {
 }
 
 void gs_opengl_internal_bind_state() {
-    if (requested_vertex_buffer != bound_vertex_buffer) {
-        if (requested_vertex_buffer != NULL) {
-            glBindBuffer(GL_ARRAY_BUFFER, *(GLuint*)requested_vertex_buffer->handle);
-        } else {
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
-        }
-        bound_vertex_buffer = requested_vertex_buffer;
-    }
-
-    if (requested_index_buffer != bound_index_buffer) {
-        if (requested_index_buffer != NULL) {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *(GLuint*)requested_index_buffer->handle);
-        } else {
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-        }
-        bound_index_buffer = requested_index_buffer;
-    }
+    GS_OPENGL_BIND_BUFFER(GL_ARRAY_BUFFER, requested_vertex_buffer, bound_vertex_buffer);
+    GS_OPENGL_BIND_BUFFER(GL_ELEMENT_ARRAY_BUFFER, requested_index_buffer, bound_index_buffer);
 
     if (requested_program != bound_program) {
-        if (requested_program != NULL) {
-            glUseProgram(*(GLuint*)requested_program->handle);
-        } else {
-            glUseProgram(0);
-        }
+        GS_ASSERT(requested_program != NULL); // must have a program bound
+
+        glUseProgram(*(GLuint*)requested_program->handle);
         bound_program = requested_program;
     }
 
     if (requested_layout != bound_layout) {
-        if (requested_layout != NULL) {
-            for (int i = 0; i < requested_layout->count; i++) {
-                const GsVtxLayoutItem item = requested_layout->items[i];
-                glVertexAttribPointer(item.index, item.components, gs_opengl_get_attrib_type(item.type), GL_FALSE, requested_layout->stride, (void*)item.offset);
-                glEnableVertexAttribArray(item.index);
-            }
+        gs_opengl_internal_bind_layout_state();
+    }
+}
 
-            if (bound_layout != NULL && requested_layout->count < bound_layout->count) {
-                for (int i = requested_layout->count; i < bound_layout->count; i++) {
-                    glDisableVertexAttribArray(bound_layout->items[i].index);
-                }
-            }
-
-            bound_layout = requested_layout;
-        } else {
-            if (bound_layout != NULL) {
-                for (int i = 0; i < bound_layout->count; i++) {
-                    glDisableVertexAttribArray(bound_layout->items[i].index);
-                }
-            }
-
-            bound_layout = NULL;
+void gs_opengl_internal_bind_layout_state() {
+    if (requested_layout != NULL) {
+        for (int i = 0; i < requested_layout->count; i++) {
+            const GsVtxLayoutItem item = requested_layout->items[i];
+            glVertexAttribPointer(item.index, item.components, gs_opengl_get_attrib_type(item.type), GL_FALSE, requested_layout->stride, (const void*)(uintptr_t)item.offset);
+            glEnableVertexAttribArray(item.index);
         }
+
+        if (bound_layout != NULL && requested_layout->count < bound_layout->count) {
+            for (int i = requested_layout->count; i < bound_layout->count; i++) {
+                glDisableVertexAttribArray(bound_layout->items[i].index);
+            }
+        }
+
+        bound_layout = requested_layout;
+    } else {
+        if (bound_layout != NULL) {
+            for (int i = 0; i < bound_layout->count; i++) {
+                glDisableVertexAttribArray(bound_layout->items[i].index);
+            }
+        }
+
+        bound_layout = NULL;
     }
 }
 
