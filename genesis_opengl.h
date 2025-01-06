@@ -8,6 +8,8 @@ extern "C"
 {
 #endif
 
+#define GS_OPENGL_MAX_TEXTURE_SLOTS 16
+
 // creation / destruction
 GsBackend *gs_opengl_create();
 GS_BOOL gs_opengl_init(GsBackend *backend, GsConfig *config);

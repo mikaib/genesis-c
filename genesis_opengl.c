@@ -2,7 +2,6 @@
 #include "genesis.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define GS_OPENGL_MAX_TEXTURE_SLOTS 16
 
 #define GS_OPENGL_BIND_BUFFER(target, requested, bound) \
     if (requested != bound) { \
