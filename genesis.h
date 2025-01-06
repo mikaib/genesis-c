@@ -26,7 +26,7 @@ extern "C"
 #define GS_FALSE 0
 
 typedef enum {
-    GS_BACKEND_GL460
+    GS_BACKEND_OPENGL
 } GsBackendType;
 
 typedef enum {
@@ -41,9 +41,10 @@ typedef enum {
     GS_COMMAND_SET_VIEWPORT,
     GS_COMMAND_USE_PIPELINE,
     GS_COMMAND_USE_BUFFER,
+    GS_COMMAND_USE_TEXTURE,
     GS_COMMAND_DRAW_ARRAYS,
     GS_COMMAND_DRAW_INDEXED,
-    GS_COMMAND_SET_SCISSOR,
+    GS_COMMAND_SET_SCISSOR
 } GsCommandType;
 
 typedef enum {
@@ -74,6 +75,43 @@ typedef enum {
     GS_SHADER_TYPE_FRAGMENT
 } GsShaderType;
 
+typedef enum {
+    GS_TEXTURE_FORMAT_RGB8,
+    GS_TEXTURE_FORMAT_RGBA8,
+    GS_TEXTURE_FORMAT_RGB16F,
+    GS_TEXTURE_FORMAT_RGBA16F,
+    GS_TEXTURE_FORMAT_DEPTH24_STENCIL8,
+    GS_TEXTURE_FORMAT_DEPTH32F
+} GsTextureFormat;
+
+typedef enum {
+    GS_TEXTURE_WRAP_REPEAT,
+    GS_TEXTURE_WRAP_CLAMP,
+    GS_TEXTURE_WRAP_MIRROR
+} GsTextureWrap;
+
+typedef enum {
+    GS_TEXTURE_FILTER_NEAREST,
+    GS_TEXTURE_FILTER_LINEAR,
+    GS_TEXTURE_FILTER_MIPMAP_NEAREST,
+    GS_TEXTURE_FILTER_MIPMAP_LINEAR
+} GsTextureFilter;
+
+typedef enum {
+    GS_TEXTURE_TYPE_2D,
+    GS_TEXTURE_TYPE_CUBEMAP
+} GsTextureType;
+
+typedef enum {
+    GS_CUBEMAP_FACE_UP,
+    GS_CUBEMAP_FACE_DOWN,
+    GS_CUBEMAP_FACE_LEFT,
+    GS_CUBEMAP_FACE_RIGHT,
+    GS_CUBEMAP_FACE_FRONT,
+    GS_CUBEMAP_FACE_BACK,
+    GS_CUBEMAP_FACE_NONE
+} GsCubemapFace;
+
 typedef struct GsBackend GsBackend;
 typedef struct GsConfig GsConfig;
 typedef struct GsVtxLayout GsVtxLayout;
@@ -84,10 +122,12 @@ typedef struct GsPipeline GsPipeline;
 typedef struct GsShader GsShader;
 typedef struct GsProgram GsProgram;
 typedef struct GsBuffer GsBuffer;
+typedef struct GsTexture GsTexture;
 typedef struct GsUnmanagedBufferData GsUnmanagedBufferData;
 typedef struct GsClearCommand GsClearCommand;
 typedef struct GsViewportCommand GsViewportCommand;
 typedef struct GsPipelineCommand GsPipelineCommand;
+typedef struct GsTextureCommand GsTextureCommand;
 typedef struct GsUseBufferCommand GsUseBufferCommand;
 typedef struct GsDrawArraysCommand GsDrawArraysCommand;
 typedef struct GsDrawIndexedCommand GsDrawIndexedCommand;
@@ -128,6 +168,12 @@ typedef struct GsBackend {
     // layout
     void (*create_layout_handle)(GsVtxLayout *layout);
     void (*destroy_layout_handle)(GsVtxLayout *layout);
+
+    // texture
+    void (*create_texture_handle)(GsTexture *texture);
+    void (*set_texture_data)(GsTexture *texture, GsCubemapFace face, void *data);
+    void (*generate_mipmaps)(GsTexture *texture);
+    void (*destroy_texture_handle)(GsTexture *texture);
 } GsBackend;
 
 typedef struct GsVtxLayoutItem {
@@ -197,6 +243,11 @@ typedef struct GsPipelineCommand {
     GsPipeline *pipeline;
 } GsPipelineCommand;
 
+typedef struct GsTextureCommand {
+    GsTexture *texture;
+    int slot;
+} GsTextureCommand;
+
 typedef struct GsUseBufferCommand {
     GsBuffer *buffer;
 } GsUseBufferCommand;
@@ -230,6 +281,27 @@ typedef struct GsProgram {
     void *handle;
 } GsProgram;
 
+typedef struct GsTexture {
+    int width;
+    int height;
+    GsTextureFormat format;
+    GsTextureWrap wrap_s;
+    GsTextureWrap wrap_t;
+    GsTextureWrap wrap_r; // cubemap
+    GsTextureFilter min;
+    GsTextureFilter mag;
+    GsTextureType type;
+    void *handle;
+} GsTexture;
+
+// Textures
+GsTexture *gs_create_texture(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureFilter min, GsTextureFilter mag);
+GsTexture *gs_create_cubemap(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureWrap wrap_r, GsTextureFilter min, GsTextureFilter mag);
+void gs_texture_set_data(GsTexture *texture, void *data);
+void gs_texture_set_face_data(GsTexture *texture, GsCubemapFace face, void *data);
+void gs_texture_generate_mipmaps(GsTexture *texture);
+void gs_destroy_texture(GsTexture *texture);
+
 // Shaders
 GsShader *gs_create_shader(GsShaderType type, const char *source);
 void gs_destroy_shader(GsShader *shader);
@@ -237,7 +309,7 @@ void gs_destroy_shader(GsShader *shader);
 // Programs
 GsProgram *gs_create_program();
 void gs_program_attach_shader(GsProgram *program, GsShader *shader);
-void gs_program_complete(GsProgram *program);
+void gs_program_build(GsProgram *program);
 void gs_destroy_program(GsProgram *program);
 
 // Pipeline
@@ -262,6 +334,7 @@ void gs_clear(GsCommandList *list, GsClearFlags flags, float r, float g, float b
 void gs_set_viewport(GsCommandList *list, int x, int y, int width, int height);
 void gs_use_pipeline(GsCommandList *list, GsPipeline *pipeline);
 void gs_use_buffer(GsCommandList *list, GsBuffer *buffer);
+void gs_use_texture(GsCommandList *list, GsTexture *texture, int slot);
 void gs_set_scissor(GsCommandList *list, int x, int y, int width, int height);
 void gs_disable_scissor(GsCommandList *list);
 void gs_draw_arrays(GsCommandList *list, int start, int count);
@@ -274,7 +347,7 @@ void gs_destroy_command_list(GsCommandList *list);
 GS_BOOL gs_layout_add(GsVtxLayout *layout, int index, GsVtxAttribType type, int count);
 GsVtxLayout *gs_create_layout();
 void gs_destroy_layout(GsVtxLayout *layout);
-void gs_layout_complete(GsVtxLayout *layout);
+void gs_layout_build(GsVtxLayout *layout);
 
 // Global
 GS_BOOL gs_init(GsConfig *config);

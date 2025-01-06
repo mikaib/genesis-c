@@ -83,7 +83,7 @@ GS_BOOL gs_init(GsConfig *config) {
     return GS_TRUE;
 }
 
-void gs_layout_complete(GsVtxLayout *layout) {
+void gs_layout_build(GsVtxLayout *layout) {
     GS_ASSERT(layout != NULL);
     GS_ASSERT(layout->count > 0);
     GS_ASSERT(layout->completed == GS_FALSE);
@@ -112,7 +112,7 @@ void gs_destroy_config(GsConfig *config) {
 }
 
 GsBackend *gs_create_backend(const GsBackendType type) {
-    if (type == GS_BACKEND_GL460) {
+    if (type == GS_BACKEND_OPENGL) {
         return gs_opengl_create();
     }
 
@@ -127,7 +127,7 @@ void gs_destroy_backend(GsBackend *backend) {
 }
 
 GsBackendType gs_get_optimal_backend_type() {
-    return GS_BACKEND_GL460;
+    return GS_BACKEND_OPENGL;
 }
 
 void gs_shutdown() {
@@ -329,6 +329,17 @@ void gs_use_buffer(GsCommandList *list, GsBuffer *buffer) {
     gs_command_list_add(list, GS_COMMAND_USE_BUFFER, data, sizeof(GsUseBufferCommand));
 }
 
+void gs_use_texture(GsCommandList *list, GsTexture *texture, const int slot) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(texture != NULL);
+
+    GsTextureCommand *data = GS_ALLOC(GsTextureCommand);
+    data->texture = texture;
+    data->slot = slot;
+
+    gs_command_list_add(list, GS_COMMAND_USE_TEXTURE, data, sizeof(GsTextureCommand));
+}
+
 void gs_draw_arrays(GsCommandList *list, const int start, const int count) {
     GS_ASSERT(list != NULL);
 
@@ -419,7 +430,7 @@ void gs_program_attach_shader(GsProgram *program, GsShader *shader) {
     }
 }
 
-void gs_program_complete(GsProgram *program) {
+void gs_program_build(GsProgram *program) {
     GS_ASSERT(program != NULL);
     GS_ASSERT(program->completed == GS_FALSE);
     GS_ASSERT(active_config != NULL);
@@ -440,6 +451,83 @@ void gs_destroy_program(GsProgram *program) {
     }
 
     GS_FREE(program);
+}
+
+GsTexture *gs_create_texture(const int width, const int height, const GsTextureFormat format, const GsTextureWrap wrap_s, const GsTextureWrap wrap_t, const GsTextureFilter min, const GsTextureFilter mag) {
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    GsTexture *texture = GS_ALLOC(GsTexture);
+    texture->width = width;
+    texture->height = height;
+    texture->format = format;
+    texture->wrap_s = wrap_s;
+    texture->wrap_t = wrap_t;
+    texture->wrap_r = GS_TEXTURE_WRAP_REPEAT;
+    texture->min = min;
+    texture->mag = mag;
+    texture->type = GS_TEXTURE_TYPE_2D;
+    texture->handle = NULL;
+
+    active_config->backend->create_texture_handle(texture);
+
+    return texture;
+}
+
+GsTexture *gs_create_cubemap(const int width, const int height, const GsTextureFormat format, const GsTextureWrap wrap_s, const GsTextureWrap wrap_t, const GsTextureWrap wrap_r, const GsTextureFilter min, const GsTextureFilter mag) {
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    GsTexture *texture = GS_ALLOC(GsTexture);
+    texture->width = width;
+    texture->height = height;
+    texture->format = format;
+    texture->wrap_s = wrap_s;
+    texture->wrap_t = wrap_t;
+    texture->wrap_r = wrap_r;
+    texture->min = min;
+    texture->mag = mag;
+    texture->type = GS_TEXTURE_TYPE_CUBEMAP;
+    texture->handle = NULL;
+
+    active_config->backend->create_texture_handle(texture);
+
+    return texture;
+}
+
+void gs_texture_set_data(GsTexture *texture, void *data) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(data != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->set_texture_data(texture, GS_CUBEMAP_FACE_NONE, data);
+}
+
+void gs_texture_set_face_data(GsTexture *texture, const GsCubemapFace face, void *data) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(data != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->set_texture_data(texture, face, data);
+}
+
+void gs_texture_generate_mipmaps(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->generate_mipmaps(texture);
+}
+
+void gs_destroy_texture(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->destroy_texture_handle(texture);
+    GS_FREE(texture);
 }
 
 void gs_create_mainloop(void (*mainloop)()) {

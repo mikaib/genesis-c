@@ -2,6 +2,7 @@
 #include "genesis.h"
 #include <stdio.h>
 #include <stdlib.h>
+#define GS_OPENGL_MAX_TEXTURE_SLOTS 16
 
 #define GS_OPENGL_BIND_BUFFER(target, requested, bound) \
     if (requested != bound) { \
@@ -40,6 +41,13 @@
     #include <EGL/egl.h>
 #endif
 
+#if defined(__ANDROID__)
+    #define GS_OPENGL_PLATFORM_IMPL
+    #define GS_OPENGL_V200ES
+    #include <GLES2/gl2.h>
+    #include <EGL/egl.h>
+#endif
+
 #ifdef GS_OPENGL_USE_GLAD
 #include "glad/include/glad/gl.h"
 #endif
@@ -51,11 +59,23 @@ void *gs_opengl_getproc(const char *name) {
     }
 #endif
 
+GLuint* bound_vertex_array = NULL;
+GsBuffer* bound_vertex_buffer = NULL;
+GsBuffer* bound_index_buffer = NULL;
+GsProgram* bound_program = NULL;
+GsVtxLayout* bound_layout = NULL;
+GsTexture** bound_textures = NULL;
+GsBuffer* requested_vertex_buffer = NULL;
+GsBuffer* requested_index_buffer = NULL;
+GsProgram* requested_program = NULL;
+GsVtxLayout* requested_layout = NULL;
+GsTexture** requested_textures = NULL;
+
 GsBackend *gs_opengl_create() {
     GsBackend *backend = GS_ALLOC(GsBackend);
 
     // core
-    backend->type = GS_BACKEND_GL460;
+    backend->type = GS_BACKEND_OPENGL;
     backend->init = gs_opengl_init;
     backend->shutdown = gs_opengl_shutdown;
     backend->submit = gs_opengl_submit;
@@ -78,18 +98,23 @@ GsBackend *gs_opengl_create() {
     backend->create_layout_handle = gs_opengl_create_layout;
     backend->destroy_layout_handle = gs_opengl_destroy_layout;
 
+    // texture
+    backend->create_texture_handle = gs_opengl_create_texture;
+    backend->set_texture_data = gs_opengl_set_texture_data;
+    backend->generate_mipmaps = gs_opengl_generate_mipmaps;
+    backend->destroy_texture_handle = gs_opengl_destroy_texture;
+
+    // init state
+    bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_OPENGL_MAX_TEXTURE_SLOTS);
+    requested_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_OPENGL_MAX_TEXTURE_SLOTS);
+
+    for (int i = 0; i < GS_OPENGL_MAX_TEXTURE_SLOTS; i++) {
+        bound_textures[i] = NULL;
+        requested_textures[i] = NULL;
+    }
+
     return backend;
 }
-
-GLuint* bound_vertex_array = NULL;
-GsBuffer* bound_vertex_buffer = NULL;
-GsBuffer* bound_index_buffer = NULL;
-GsProgram* bound_program = NULL;
-GsVtxLayout* bound_layout = NULL;
-GsBuffer* requested_vertex_buffer = NULL;
-GsBuffer* requested_index_buffer = NULL;
-GsProgram* requested_program = NULL;
-GsVtxLayout* requested_layout = NULL;
 
 int gs_opengl_get_buffer_type(GsBufferType type) {
     switch (type) {
@@ -146,6 +171,21 @@ void gs_opengl_internal_bind_state() {
     if (requested_layout != bound_layout) {
         gs_opengl_internal_bind_layout_state();
     }
+
+    for (int i = 0; i < GS_OPENGL_MAX_TEXTURE_SLOTS; i++) {
+        if (requested_textures[i] != bound_textures[i]) {
+            if (requested_textures[i] != NULL) {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, *(GLuint*)requested_textures[i]->handle);
+            } else {
+                glActiveTexture(GL_TEXTURE0 + i);
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+
+            bound_textures[i] = requested_textures[i];
+        }
+    }
+
 }
 
 void gs_opengl_internal_bind_layout_state() {
@@ -214,6 +254,19 @@ void gs_opengl_internal_unbind_buffer(GsBufferType type) {
             requested_index_buffer = NULL;
         break;
     }
+}
+
+void gs_opengl_internal_bind_texture(GsTexture *texture, int slot) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(slot >= 0 && slot < GS_OPENGL_MAX_TEXTURE_SLOTS);
+
+    requested_textures[slot] = texture;
+}
+
+void gs_opengl_internal_unbind_texture(int slot) {
+    GS_ASSERT(slot >= 0 && slot < GS_OPENGL_MAX_TEXTURE_SLOTS);
+
+    requested_textures[slot] = NULL;
 }
 
 void gs_opengl_create_buffer(GsBuffer *buffer) {
@@ -345,6 +398,11 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
     gs_opengl_internal_bind_layout(pipeline->layout);
 }
 
+void gs_opengl_cmd_use_texture(const GsCommandListItem item) {
+    const GsTextureCommand *cmd = (GsTextureCommand *) item.data;
+    gs_opengl_internal_bind_texture(cmd->texture, cmd->slot);
+}
+
 void gs_opengl_cmd_use_buffer(const GsCommandListItem item) {
     const GsUseBufferCommand *cmd = (GsUseBufferCommand *) item.data;
     gs_opengl_internal_bind_buffer(cmd->buffer);
@@ -392,6 +450,9 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
                 break;
             case GS_COMMAND_USE_BUFFER:
                 gs_opengl_cmd_use_buffer(item);
+                break;
+            case GS_COMMAND_USE_TEXTURE:
+                gs_opengl_cmd_use_texture(item);
                 break;
             case GS_COMMAND_DRAW_ARRAYS:
                 gs_opengl_cmd_draw_arrays(item);
@@ -465,6 +526,107 @@ int gs_opengl_get_attrib_type(GsVtxAttribType type) {
         case GS_ATTRIB_TYPE_UINT8: return GL_UNSIGNED_BYTE;
         default: return GL_FLOAT;
     }
+}
+
+int gs_opengl_get_face_type(GsCubemapFace face) {
+    switch (face) {
+        case GS_CUBEMAP_FACE_UP: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+        case GS_CUBEMAP_FACE_DOWN: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
+        case GS_CUBEMAP_FACE_LEFT: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
+        case GS_CUBEMAP_FACE_RIGHT: return GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+        case GS_CUBEMAP_FACE_FRONT: return GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
+        case GS_CUBEMAP_FACE_BACK: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
+        default: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
+    }
+}
+
+int gs_opengl_get_texture_type(GsTextureType type) {
+    switch (type) {
+        case GS_TEXTURE_TYPE_2D: return GL_TEXTURE_2D;
+        case GS_TEXTURE_TYPE_CUBEMAP: return GL_TEXTURE_CUBE_MAP;
+        default: return GL_TEXTURE_2D;
+    }
+}
+
+int gs_opengl_get_texture_format(GsTextureFormat format) {
+    switch (format) {
+        case GS_TEXTURE_FORMAT_RGBA8: return GL_RGBA;
+        case GS_TEXTURE_FORMAT_RGB8: return GL_RGB;
+        case GS_TEXTURE_FORMAT_RGB16F: return GL_RGB16F;
+        case GS_TEXTURE_FORMAT_RGBA16F: return GL_RGBA16F;
+        case GS_TEXTURE_FORMAT_DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
+        case GS_TEXTURE_FORMAT_DEPTH32F: return GL_DEPTH_COMPONENT32F;
+        default: return GL_RGBA;
+    }
+}
+
+int gs_opengl_get_texture_wrap(GsTextureWrap wrap) {
+    switch (wrap) {
+        case GS_TEXTURE_WRAP_REPEAT: return GL_REPEAT;
+        case GS_TEXTURE_WRAP_CLAMP: return GL_CLAMP_TO_EDGE;
+        case GS_TEXTURE_WRAP_MIRROR: return GL_MIRRORED_REPEAT;
+        default: return GL_REPEAT;
+    }
+}
+
+int gs_opengl_get_texture_filter(GsTextureFilter filter) {
+    switch (filter) {
+        case GS_TEXTURE_FILTER_NEAREST: return GL_NEAREST;
+        case GS_TEXTURE_FILTER_LINEAR: return GL_LINEAR;
+        case GS_TEXTURE_FILTER_MIPMAP_NEAREST: return GL_NEAREST_MIPMAP_NEAREST;
+        case GS_TEXTURE_FILTER_MIPMAP_LINEAR: return GL_LINEAR_MIPMAP_LINEAR;
+        default: return GL_NEAREST;
+    }
+}
+
+void gs_opengl_create_texture(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+
+    GLuint* handle = GS_ALLOC(GLuint);
+    glGenTextures(1, handle);
+
+    texture->handle = handle;
+}
+
+void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *data) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(data != NULL);
+
+    gs_opengl_internal_bind_texture(texture, 0);
+    gs_opengl_internal_bind_state();
+
+    glActiveTexture(GL_TEXTURE0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gs_opengl_get_texture_wrap(texture->wrap_s));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gs_opengl_get_texture_wrap(texture->wrap_t));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gs_opengl_get_texture_filter(texture->min));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gs_opengl_get_texture_filter(texture->mag));
+
+    switch (texture->type) {
+        case GS_TEXTURE_TYPE_2D:
+            glTexImage2D(GL_TEXTURE_2D, 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
+        case GS_TEXTURE_TYPE_CUBEMAP:
+            glTexImage2D(gs_opengl_get_face_type(face), 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
+    }
+}
+
+void gs_opengl_generate_mipmaps(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+
+    gs_opengl_internal_bind_texture(texture, 0);
+    gs_opengl_internal_bind_state();
+
+    glActiveTexture(GL_TEXTURE0);
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void gs_opengl_destroy_texture(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+
+    glDeleteTextures(1, (GLuint*)texture->handle);
+
+    GS_FREE(texture->handle);
+    texture->handle = NULL;
 }
 
 void gs_opengl_create_layout(GsVtxLayout *layout) {
