@@ -11,15 +11,17 @@ extern "C"
 #define GS_VERSION_PATCH 0
 
 #define GS_MAX_VERTEX_LAYOUT_ITEMS 16
+#define GS_MAX_TEXTURE_SLOTS 16
 #define GS_MAX_COMMAND_LIST_ITEMS 1024
 #define GS_MAX_COMMAND_SUBMISSIONS 1024
 
 #define GS_MALLOC(size) malloc(size)
-#define GS_ALLOC(obj) GS_ALLOC_MULTIPLE(obj, 1)
 #define GS_ALLOC_MULTIPLE(obj, count) (obj*)malloc(sizeof(obj) * count)
-#define GS_FREE(obj) free(obj)
 #define GS_ASSERT(cond) if(!(cond)) { printf("Assertion failed: %s\n", #cond); exit(1); }
 #define GS_MEMSET(ptr, value, size) memset(ptr, value, size)
+
+#define GS_ALLOC(obj) GS_ALLOC_MULTIPLE(obj, 1)
+#define GS_FREE(obj) free(obj)
 
 #define GS_BOOL int
 #define GS_TRUE 1
@@ -44,7 +46,13 @@ typedef enum {
     GS_COMMAND_USE_TEXTURE,
     GS_COMMAND_DRAW_ARRAYS,
     GS_COMMAND_DRAW_INDEXED,
-    GS_COMMAND_SET_SCISSOR
+    GS_COMMAND_SET_SCISSOR,
+    GS_COMMAND_SET_UNIFORM_INT,
+    GS_COMMAND_SET_UNIFORM_FLOAT,
+    GS_COMMAND_SET_UNIFORM_VEC2,
+    GS_COMMAND_SET_UNIFORM_VEC3,
+    GS_COMMAND_SET_UNIFORM_VEC4,
+    GS_COMMAND_SET_UNIFORM_MAT4
 } GsCommandType;
 
 typedef enum {
@@ -112,6 +120,8 @@ typedef enum {
     GS_CUBEMAP_FACE_NONE
 } GsCubemapFace;
 
+typedef int GsUniformLocation;
+
 typedef struct GsBackend GsBackend;
 typedef struct GsConfig GsConfig;
 typedef struct GsVtxLayout GsVtxLayout;
@@ -132,6 +142,12 @@ typedef struct GsUseBufferCommand GsUseBufferCommand;
 typedef struct GsDrawArraysCommand GsDrawArraysCommand;
 typedef struct GsDrawIndexedCommand GsDrawIndexedCommand;
 typedef struct GsScissorCommand GsScissorCommand;
+typedef struct GsUniformIntCommand GsUniformIntCommand;
+typedef struct GsUniformFloatCommand GsUniformFloatCommand;
+typedef struct GsUniformVec2Command GsUniformVec2Command;
+typedef struct GsUniformVec3Command GsUniformVec3Command;
+typedef struct GsUniformVec4Command GsUniformVec4Command;
+typedef struct GsUniformMat4Command GsUniformMat4Command;
 
 typedef struct GsConfig {
     // config
@@ -163,6 +179,7 @@ typedef struct GsBackend {
 
     // program,
     void (*create_program_handle)(GsProgram *program);
+    GsUniformLocation (*get_uniform_location)(GsProgram *program, const char *name);
     void (*destroy_program_handle)(GsProgram *program);
 
     // layout
@@ -239,6 +256,57 @@ typedef struct GsViewportCommand {
     int height;
 } GsViewportCommand;
 
+typedef struct GsUniformIntCommand {
+    GsUniformLocation location;
+    int value;
+} GsUniformIntCommand;
+
+typedef struct GsUniformFloatCommand {
+    GsUniformLocation location;
+    float value;
+} GsUniformFloatCommand;
+
+typedef struct GsUniformVec2Command {
+    GsUniformLocation location;
+    float x;
+    float y;
+} GsUniformVec2Command;
+
+typedef struct GsUniformVec3Command {
+    GsUniformLocation location;
+    float x;
+    float y;
+    float z;
+} GsUniformVec3Command;
+
+typedef struct GsUniformVec4Command {
+    GsUniformLocation location;
+    float x;
+    float y;
+    float z;
+    float w;
+} GsUniformVec4Command;
+
+typedef struct GsUniformMat4Command {
+    GsUniformLocation location;
+    float m00;
+    float m01;
+    float m02;
+    float m03;
+    float m10;
+    float m11;
+    float m12;
+    float m13;
+    float m20;
+    float m21;
+    float m22;
+    float m23;
+    float m30;
+    float m31;
+    float m32;
+    float m33;
+} GsUniformMat4Command;
+
 typedef struct GsPipelineCommand {
     GsPipeline *pipeline;
 } GsPipelineCommand;
@@ -310,6 +378,7 @@ void gs_destroy_shader(GsShader *shader);
 GsProgram *gs_create_program();
 void gs_program_attach_shader(GsProgram *program, GsShader *shader);
 void gs_program_build(GsProgram *program);
+GsUniformLocation gs_get_uniform_location(GsProgram *program, const char *name);
 void gs_destroy_program(GsProgram *program);
 
 // Pipeline
@@ -339,6 +408,12 @@ void gs_set_scissor(GsCommandList *list, int x, int y, int width, int height);
 void gs_disable_scissor(GsCommandList *list);
 void gs_draw_arrays(GsCommandList *list, int start, int count);
 void gs_draw_indexed(GsCommandList *list, int count);
+void gs_uniform_set_int(GsCommandList *list, GsUniformLocation location, int value);
+void gs_uniform_set_float(GsCommandList *list, GsUniformLocation location, float value);
+void gs_uniform_set_vec2(GsCommandList *list, GsUniformLocation location, float x, float y);
+void gs_uniform_set_vec3(GsCommandList *list, GsUniformLocation location, float x, float y, float z);
+void gs_uniform_set_vec4(GsCommandList *list, GsUniformLocation location, float x, float y, float z, float w);
+void gs_uniform_set_mat4(GsCommandList *list, GsUniformLocation location, float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33);
 void gs_command_list_end(GsCommandList *list);
 void gs_command_list_submit(GsCommandList *list);
 void gs_destroy_command_list(GsCommandList *list);

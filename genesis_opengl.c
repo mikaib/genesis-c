@@ -93,6 +93,9 @@ GsBackend *gs_opengl_create() {
     backend->create_program_handle = gs_opengl_create_program;
     backend->destroy_program_handle = gs_opengl_destroy_program;
 
+    // uniforms
+    backend->get_uniform_location = gs_opengl_get_uniform_location;
+
     // layout
     backend->create_layout_handle = gs_opengl_create_layout;
     backend->destroy_layout_handle = gs_opengl_destroy_layout;
@@ -104,10 +107,10 @@ GsBackend *gs_opengl_create() {
     backend->destroy_texture_handle = gs_opengl_destroy_texture;
 
     // init state
-    bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_OPENGL_MAX_TEXTURE_SLOTS);
-    requested_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_OPENGL_MAX_TEXTURE_SLOTS);
+    bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
+    requested_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
 
-    for (int i = 0; i < GS_OPENGL_MAX_TEXTURE_SLOTS; i++) {
+    for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         bound_textures[i] = NULL;
         requested_textures[i] = NULL;
     }
@@ -171,7 +174,7 @@ void gs_opengl_internal_bind_state() {
         gs_opengl_internal_bind_layout_state();
     }
 
-    for (int i = 0; i < GS_OPENGL_MAX_TEXTURE_SLOTS; i++) {
+    for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         if (requested_textures[i] != bound_textures[i]) {
             if (requested_textures[i] != NULL) {
                 glActiveTexture(GL_TEXTURE0 + i);
@@ -184,7 +187,55 @@ void gs_opengl_internal_bind_state() {
             bound_textures[i] = requested_textures[i];
         }
     }
+}
 
+void gs_opengl_cmd_set_uniform_int(const GsCommandListItem item) {
+    const GsUniformIntCommand *cmd = (GsUniformIntCommand *) item.data;
+
+    gs_opengl_internal_bind_state();
+    glUniform1i(cmd->location, cmd->value);
+}
+
+void gs_opengl_cmd_set_uniform_float(const GsCommandListItem item) {
+    const GsUniformFloatCommand *cmd = (GsUniformFloatCommand *) item.data;
+
+    gs_opengl_internal_bind_state();
+    glUniform1f(cmd->location, cmd->value);
+}
+
+void gs_opengl_cmd_set_uniform_vec2(const GsCommandListItem item) {
+    const GsUniformVec2Command *cmd = (GsUniformVec2Command *) item.data;
+
+    gs_opengl_internal_bind_state();
+    glUniform2f(cmd->location, cmd->x, cmd->y);
+}
+
+void gs_opengl_cmd_set_uniform_vec3(const GsCommandListItem item) {
+    const GsUniformVec3Command *cmd = (GsUniformVec3Command *) item.data;
+
+    gs_opengl_internal_bind_state();
+    glUniform3f(cmd->location, cmd->x, cmd->y, cmd->z);
+}
+
+void gs_opengl_cmd_set_uniform_vec4(const GsCommandListItem item) {
+    const GsUniformVec4Command *cmd = (GsUniformVec4Command *) item.data;
+
+    gs_opengl_internal_bind_state();
+    glUniform4f(cmd->location, cmd->x, cmd->y, cmd->z, cmd->w);
+}
+
+void gs_opengl_cmd_set_uniform_mat4(const GsCommandListItem item) {
+    const GsUniformMat4Command *cmd = (GsUniformMat4Command *) item.data;
+
+    float mat[16] = {
+        cmd->m00, cmd->m01, cmd->m02, cmd->m03,
+        cmd->m10, cmd->m11, cmd->m12, cmd->m13,
+        cmd->m20, cmd->m21, cmd->m22, cmd->m23,
+        cmd->m30, cmd->m31, cmd->m32, cmd->m33
+    };
+
+    gs_opengl_internal_bind_state();
+    glUniformMatrix4fv(cmd->location, 1, GL_FALSE, mat);
 }
 
 void gs_opengl_internal_bind_layout_state() {
@@ -257,13 +308,13 @@ void gs_opengl_internal_unbind_buffer(GsBufferType type) {
 
 void gs_opengl_internal_bind_texture(GsTexture *texture, int slot) {
     GS_ASSERT(texture != NULL);
-    GS_ASSERT(slot >= 0 && slot < GS_OPENGL_MAX_TEXTURE_SLOTS);
+    GS_ASSERT(slot >= 0 && slot < GS_MAX_TEXTURE_SLOTS);
 
     requested_textures[slot] = texture;
 }
 
 void gs_opengl_internal_unbind_texture(int slot) {
-    GS_ASSERT(slot >= 0 && slot < GS_OPENGL_MAX_TEXTURE_SLOTS);
+    GS_ASSERT(slot >= 0 && slot < GS_MAX_TEXTURE_SLOTS);
 
     requested_textures[slot] = NULL;
 }
@@ -409,7 +460,6 @@ void gs_opengl_cmd_use_buffer(const GsCommandListItem item) {
 
 void gs_opengl_cmd_draw_arrays(const GsCommandListItem item) {
     const GsDrawArraysCommand *cmd = (GsDrawArraysCommand *) item.data;
-
     gs_opengl_internal_bind_state();
     glDrawArrays(GL_TRIANGLES, cmd->start, cmd->count);
 }
@@ -461,6 +511,24 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
                 break;
             case GS_COMMAND_SET_SCISSOR:
                 gs_opengl_cmd_set_scissor(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_INT:
+                gs_opengl_cmd_set_uniform_int(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_FLOAT:
+                gs_opengl_cmd_set_uniform_float(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_VEC2:
+                gs_opengl_cmd_set_uniform_vec2(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_VEC3:
+                gs_opengl_cmd_set_uniform_vec3(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_VEC4:
+                gs_opengl_cmd_set_uniform_vec4(item);
+                break;
+            case GS_COMMAND_SET_UNIFORM_MAT4:
+                gs_opengl_cmd_set_uniform_mat4(item);
                 break;
             default:
                 gs_handle_internal_command(item);
@@ -607,6 +675,15 @@ void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *da
             glTexImage2D(gs_opengl_get_face_type(face), 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
     }
+}
+
+GsUniformLocation gs_opengl_get_uniform_location(GsProgram *program, const char *name) {
+    GS_ASSERT(program != NULL);
+    GS_ASSERT(name != NULL);
+
+    GLuint loc = glGetUniformLocation(*(GLuint*)program->handle, name);
+
+    return loc; // -1 is an invalid location
 }
 
 void gs_opengl_generate_mipmaps(GsTexture *texture) {

@@ -8,8 +8,6 @@ extern "C"
 {
 #endif
 
-#define GS_OPENGL_MAX_TEXTURE_SLOTS 16
-
 // creation / destruction
 GsBackend *gs_opengl_create();
 GS_BOOL gs_opengl_init(GsBackend *backend, GsConfig *config);
@@ -22,6 +20,16 @@ void gs_opengl_destroy_shader(GsShader *shader);
 // programs
 void gs_opengl_create_program(GsProgram *program);
 void gs_opengl_destroy_program(GsProgram *program);
+
+// uniforms
+GsUniformLocation gs_opengl_get_uniform_location(GsProgram *program, const char *name);
+void gs_opengl_set_uniform_int(GsUniformLocation location, int value);
+void gs_opengl_set_uniform_float(GsUniformLocation location, float value);
+void gs_opengl_set_uniform_vec2(GsUniformLocation location, float x, float y);
+void gs_opengl_set_uniform_vec3(GsUniformLocation location, float x, float y, float z);
+void gs_opengl_set_uniform_vec4(GsUniformLocation location, float x, float y, float z, float w);
+void gs_opengl_set_uniform_mat4(GsUniformLocation location, float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33);
+
 
 // layout
 void gs_opengl_create_layout(GsVtxLayout *layout);

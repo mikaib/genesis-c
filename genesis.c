@@ -17,6 +17,7 @@ GsVtxLayout *gs_create_layout() {
     layout->stride = 0;
     layout->components = 0;
     layout->completed = GS_FALSE;
+    layout->handle = NULL;
 
     return layout;
 }
@@ -141,6 +142,7 @@ void gs_shutdown() {
 GsPipeline *gs_create_pipeline() {
     GsPipeline *pipeline = GS_ALLOC(GsPipeline);
     pipeline->layout = NULL;
+    pipeline->program = NULL;
 
     return pipeline;
 }
@@ -414,6 +416,15 @@ GsProgram *gs_create_program() {
     return program;
 }
 
+GsUniformLocation gs_get_uniform_location(GsProgram *program, const char *name) {
+    GS_ASSERT(program != NULL);
+    GS_ASSERT(name != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    return active_config->backend->get_uniform_location(program, name);
+}
+
 void gs_program_attach_shader(GsProgram *program, GsShader *shader) {
     GS_ASSERT(program != NULL);
     GS_ASSERT(shader != NULL);
@@ -519,6 +530,87 @@ void gs_texture_generate_mipmaps(GsTexture *texture) {
     GS_ASSERT(active_config->backend != NULL);
 
     active_config->backend->generate_mipmaps(texture);
+}
+
+void gs_uniform_set_int(GsCommandList *list, GsUniformLocation location, int value) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformIntCommand *data = GS_ALLOC(GsUniformIntCommand);
+    data->location = location;
+    data->value = value;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_INT, data, sizeof(GsUniformIntCommand));
+}
+
+void gs_uniform_set_float(GsCommandList *list, GsUniformLocation location, float value) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformFloatCommand *data = GS_ALLOC(GsUniformFloatCommand);
+    data->location = location;
+    data->value = value;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_FLOAT, data, sizeof(GsUniformFloatCommand));
+}
+
+void gs_uniform_set_vec2(GsCommandList *list, GsUniformLocation location, float x, float y) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformVec2Command *data = GS_ALLOC(GsUniformVec2Command);
+    data->location = location;
+    data->x = x;
+    data->y = y;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_VEC2, data, sizeof(GsUniformVec2Command));
+}
+
+void gs_uniform_set_vec3(GsCommandList *list, GsUniformLocation location, float x, float y, float z) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformVec3Command *data = GS_ALLOC(GsUniformVec3Command);
+    data->location = location;
+    data->x = x;
+    data->y = y;
+    data->z = z;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_VEC3, data, sizeof(GsUniformVec3Command));
+}
+
+void gs_uniform_set_vec4(GsCommandList *list, GsUniformLocation location, float x, float y, float z, float w) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformVec4Command *data = GS_ALLOC(GsUniformVec4Command);
+    data->location = location;
+    data->x = x;
+    data->y = y;
+    data->z = z;
+    data->w = w;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_VEC4, data, sizeof(GsUniformVec4Command));
+}
+
+void gs_uniform_set_mat4(GsCommandList *list, GsUniformLocation location, float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33) {
+    GS_ASSERT(list != NULL);
+
+    GsUniformMat4Command *data = GS_ALLOC(GsUniformMat4Command);
+    data->location = location;
+    data->m00 = m00;
+    data->m01 = m01;
+    data->m02 = m02;
+    data->m03 = m03;
+    data->m10 = m10;
+    data->m11 = m11;
+    data->m12 = m12;
+    data->m13 = m13;
+    data->m20 = m20;
+    data->m21 = m21;
+    data->m22 = m22;
+    data->m23 = m23;
+    data->m30 = m30;
+    data->m31 = m31;
+    data->m32 = m32;
+    data->m33 = m33;
+
+    gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_MAT4, data, sizeof(GsUniformMat4Command));
 }
 
 void gs_destroy_texture(GsTexture *texture) {
