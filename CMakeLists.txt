@@ -12,10 +12,10 @@ if(WIN32)
 endif()
 
 add_executable(Native
+    glad/src/gl.c
     genesis.c
     genesis.h
-        genesis_opengl.c
-        genesis_opengl.h
-    glad/src/gl.c
+    genesis_opengl.c
+    genesis_opengl.h
     test.c
 )
