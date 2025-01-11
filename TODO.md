@@ -8,6 +8,9 @@
 - [textures] simpler creation
 - [textures] modification of parameters
 - [textures] 3d textures
+- [textures] texture arrays
+- [programs] uniform buffers
+- [shaders] SPIR-V
 - [core] getCapabilities function
 - [core] getSystemCounter function (resources, memory, performance, etc)
 
