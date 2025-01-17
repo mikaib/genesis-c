@@ -638,3 +638,12 @@ void gs_stop_mainloop() {
     mainloop_active = GS_FALSE;
 }
 
+GS_BOOL gs_has_capability(const GsCapability capability) {
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    return (active_config->backend->capabilities & capability) == capability;
+}
+
+
+

@@ -3,16 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define GS_OPENGL_BIND_BUFFER(target, requested, bound) \
-    if (requested != bound) { \
-        if (requested != NULL) { \
-            glBindBuffer(target, *(GLuint*)requested->handle); \
-        } else { \
-            glBindBuffer(target, 0); \
-        } \
-        bound = requested; \
-    }
-
 #if defined(_WIN32)
     #include <windows.h>
     #define GS_OPENGL_PLATFORM_IMPL
@@ -58,7 +48,6 @@ void *gs_opengl_getproc(const char *name) {
     }
 #endif
 
-GLuint* bound_vertex_array = NULL;
 GsBuffer* bound_vertex_buffer = NULL;
 GsBuffer* bound_index_buffer = NULL;
 GsProgram* bound_program = NULL;
@@ -160,8 +149,35 @@ int gs_opengl_get_buffer_intent(GsBufferIntent intent) {
 }
 
 void gs_opengl_internal_bind_state() {
-    GS_OPENGL_BIND_BUFFER(GL_ARRAY_BUFFER, requested_vertex_buffer, bound_vertex_buffer);
-    GS_OPENGL_BIND_BUFFER(GL_ELEMENT_ARRAY_BUFFER, requested_index_buffer, bound_index_buffer);
+    if (requested_vertex_buffer != bound_vertex_buffer) {
+        if (requested_vertex_buffer != NULL) {
+            GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_vertex_buffer->handle;
+            glBindVertexArray(handle->vaoHandle);
+
+            bound_index_buffer = handle->lastIndexBuffer;
+            bound_layout = handle->lastLayout;
+        } else {
+            glBindVertexArray(0);
+        }
+
+        bound_vertex_buffer = requested_vertex_buffer;
+    }
+
+    if (requested_index_buffer != bound_index_buffer) {
+        if (requested_index_buffer != NULL) {
+            GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_index_buffer->handle;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle->handle);
+        } else {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
+
+        if (bound_vertex_buffer != NULL) {
+            GsOpenGLBufferHandle *vertexHandle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+            vertexHandle->lastIndexBuffer = requested_index_buffer;
+        }
+
+        bound_index_buffer = requested_index_buffer;
+    }
 
     if (requested_program != bound_program) {
         GS_ASSERT(requested_program != NULL); // must have a program bound
@@ -239,6 +255,16 @@ void gs_opengl_cmd_set_uniform_mat4(const GsCommandListItem item) {
 }
 
 void gs_opengl_internal_bind_layout_state() {
+    if (bound_vertex_buffer == NULL) {
+        bound_layout = requested_layout;
+        return;
+    }
+
+    GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+    handle->lastLayout = requested_layout;
+
+    glBindBuffer(GL_ARRAY_BUFFER, handle->handle);
+
     if (requested_layout != NULL) {
         for (int i = 0; i < requested_layout->count; i++) {
             const GsVtxLayoutItem item = requested_layout->items[i];
@@ -269,11 +295,11 @@ void gs_opengl_internal_bind_buffer(GsBuffer *buffer) {
 
     switch (buffer->type) {
         case GS_BUFFER_TYPE_VERTEX:
-           requested_vertex_buffer = buffer;
-        break;
+            requested_vertex_buffer = buffer;
+            break;
         case GS_BUFFER_TYPE_INDEX:
             requested_index_buffer = buffer;
-        break;
+            break;
     }
 }
 
@@ -322,10 +348,32 @@ void gs_opengl_internal_unbind_texture(int slot) {
 void gs_opengl_create_buffer(GsBuffer *buffer) {
     GS_ASSERT(buffer != NULL);
 
-    GLuint* buffers = GS_ALLOC_MULTIPLE(GLuint, 1);
-    glGenBuffers(1, buffers);
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
 
-    buffer->handle = &buffers[0];
+    GsOpenGLBufferHandle *handle = GS_ALLOC(GsOpenGLBufferHandle);
+    handle->handle = vbo;
+    handle->vaoHandle = 0xFF; // invalid
+    handle->lastLayout = NULL;
+    handle->lastIndexBuffer = NULL;
+
+    if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
+        GLuint vao;
+        glGenVertexArrays(1, &vao);
+        handle->vaoHandle = vao;
+
+        gs_opengl_internal_unbind_layout();
+        gs_opengl_internal_unbind_buffer(GS_BUFFER_TYPE_VERTEX);
+        gs_opengl_internal_unbind_buffer(GS_BUFFER_TYPE_INDEX);
+        gs_opengl_internal_bind_state();
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        gs_opengl_internal_bind_buffer(buffer);
+    }
+
+    buffer->handle = (void*)handle;
 }
 
 void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
@@ -362,7 +410,12 @@ void gs_opengl_destroy_buffer(GsBuffer *buffer) {
         gs_opengl_internal_bind_state();
     }
 
-    glDeleteBuffers(1, (GLuint*)buffer->handle);
+    GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)buffer->handle;
+    glDeleteBuffers(1, &handle->handle);
+
+    if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
+        glDeleteVertexArrays(1, &handle->vaoHandle);
+    }
 
     GS_FREE(buffer->handle);
     buffer->handle = NULL;
@@ -396,23 +449,15 @@ GS_BOOL gs_opengl_init(GsBackend *backend, GsConfig *config) {
         glDebugMessageCallback((GLDEBUGPROC) gs_opengl_debug_callback, NULL);
     #endif
 
-    #ifdef GS_OPENGL_V460
-        GLuint* vao = GS_ALLOC_MULTIPLE(GLuint, 1);
-        glGenVertexArrays(1, vao);
-        glBindVertexArray(*vao);
-        bound_vertex_array = vao;
-    #endif
+    // caps
+    backend->capabilities = 0;
+    backend->capabilities |= GS_CAPABILITY_RENDERER;
 
     return GS_TRUE;
 }
 
 void gs_opengl_shutdown(GsBackend *backend) {
     GS_ASSERT(backend != NULL);
-
-    #ifdef GS_OPENGL_V460
-    glDeleteVertexArrays(1, bound_vertex_array);
-    GS_FREE(bound_vertex_array);
-    #endif
 }
 
 void gs_opengl_cmd_clear(const GsCommandListItem item) {

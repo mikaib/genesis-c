@@ -10,14 +10,14 @@ extern "C"
 #define GS_VERSION_MINOR 1
 #define GS_VERSION_PATCH 0
 
-#define GS_MAX_VERTEX_LAYOUT_ITEMS 16
+#define GS_MAX_VERTEX_LAYOUT_ITEMS 128
 #define GS_MAX_TEXTURE_SLOTS 16
-#define GS_MAX_COMMAND_LIST_ITEMS 1024
-#define GS_MAX_COMMAND_SUBMISSIONS 1024
+#define GS_MAX_COMMAND_LIST_ITEMS 4096
+#define GS_MAX_COMMAND_SUBMISSIONS 128
 
 #define GS_MALLOC(size) malloc(size)
 #define GS_ALLOC_MULTIPLE(obj, count) (obj*)malloc(sizeof(obj) * count)
-#define GS_ASSERT(cond) if(!(cond)) { printf("Assertion failed: %s\n", #cond); exit(1); }
+#define GS_ASSERT(cond) if(!(cond)) { printf("Assertion failed: %s, file: %s, line: %d\n", #cond, __FILE__, __LINE__); exit(1); }
 #define GS_MEMSET(ptr, value, size) memset(ptr, value, size)
 
 #define GS_ALLOC(obj) GS_ALLOC_MULTIPLE(obj, 1)
@@ -30,6 +30,10 @@ extern "C"
 typedef enum {
     GS_BACKEND_OPENGL
 } GsBackendType;
+
+typedef enum {
+    GS_CAPABILITY_RENDERER = 1 << 0,
+} GsCapability;
 
 typedef enum {
     GS_ATTRIB_TYPE_UINT8,
@@ -161,6 +165,7 @@ typedef struct GsConfig {
 
 typedef struct GsBackend {
     GsBackendType type;
+    GsCapability capabilities;
 
     // core
     GS_BOOL (*init)(GsBackend *backend, GsConfig *config);
@@ -439,6 +444,9 @@ GsConfig *gs_create_config();
 GsBackend *gs_create_backend(GsBackendType type);
 void gs_destroy_backend(GsBackend *backend);
 GsBackendType gs_get_optimal_backend_type();
+
+// caps
+GS_BOOL gs_has_capability(GsCapability capability);
 
 // optional mainloop wrapper
 void gs_create_mainloop(void (*mainloop)());
