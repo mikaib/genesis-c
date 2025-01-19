@@ -58,6 +58,11 @@ GsBuffer* requested_index_buffer = NULL;
 GsProgram* requested_program = NULL;
 GsVtxLayout* requested_layout = NULL;
 GsTexture** requested_textures = NULL;
+GsBlendFactor blend_src = -1;
+GsBlendFactor blend_dst = -1;
+GsBlendOp blend_op = -1;
+GS_BOOL blend_enabled = GS_FALSE;
+GS_BOOL msaa_enabled = GS_FALSE;
 
 GsBackend *gs_opengl_create() {
     GsBackend *backend = GS_ALLOC(GsBackend);
@@ -144,6 +149,40 @@ int gs_opengl_get_buffer_intent(GsBufferIntent intent) {
         case GS_BUFFER_INTENT_COPY_STREAM: return GL_STREAM_DRAW;
     }
     #endif
+
+    return 0;
+}
+
+int gs_opengl_get_blend_factor(GsBlendFactor factor) {
+    switch (factor) {
+        case GS_BLEND_FACTOR_ZERO: return GL_ZERO;
+        case GS_BLEND_FACTOR_ONE: return GL_ONE;
+        case GS_BLEND_FACTOR_SRC_COLOR: return GL_SRC_COLOR;
+        case GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
+        case GS_BLEND_FACTOR_DST_COLOR: return GL_DST_COLOR;
+        case GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
+        case GS_BLEND_FACTOR_SRC_ALPHA: return GL_SRC_ALPHA;
+        case GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
+        case GS_BLEND_FACTOR_DST_ALPHA: return GL_DST_ALPHA;
+        case GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
+        case GS_BLEND_FACTOR_CONSTANT_COLOR: return GL_CONSTANT_COLOR;
+        case GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR: return GL_ONE_MINUS_CONSTANT_COLOR;
+        case GS_BLEND_FACTOR_CONSTANT_ALPHA: return GL_CONSTANT_ALPHA;
+        case GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA: return GL_ONE_MINUS_CONSTANT_ALPHA;
+        case GS_BLEND_FACTOR_SRC_ALPHA_SATURATE: return GL_SRC_ALPHA_SATURATE;
+    }
+
+    return 0;
+}
+
+int gs_opengl_get_blend_op(GsBlendOp op) {
+    switch (op) {
+        case GS_BLEND_OP_ADD: return GL_FUNC_ADD;
+        case GS_BLEND_OP_SUBTRACT: return GL_FUNC_SUBTRACT;
+        case GS_BLEND_OP_REVERSE_SUBTRACT: return GL_FUNC_REVERSE_SUBTRACT;
+        case GS_BLEND_OP_MIN: return GL_MIN;
+        case GS_BLEND_OP_MAX: return GL_MAX;
+    }
 
     return 0;
 }
@@ -491,6 +530,35 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
 
     gs_opengl_internal_bind_program(pipeline->program);
     gs_opengl_internal_bind_layout(pipeline->layout);
+
+    if (pipeline->blend_enabled != blend_enabled) {
+        if (pipeline->blend_enabled) {
+            glEnable(GL_BLEND);
+        } else {
+            glDisable(GL_BLEND);
+        }
+
+        blend_enabled = pipeline->blend_enabled;
+    }
+
+    if (pipeline->blend_src != blend_src || pipeline->blend_dst != blend_dst || pipeline->blend_op != blend_op) {
+        glBlendFunc(gs_opengl_get_blend_factor(pipeline->blend_src), gs_opengl_get_blend_factor(pipeline->blend_dst));
+        glBlendEquation(gs_opengl_get_blend_op(pipeline->blend_op));
+
+        blend_src = pipeline->blend_src;
+        blend_dst = pipeline->blend_dst;
+        blend_op = pipeline->blend_op;
+    }
+
+    if (pipeline->msaa_samples > 0 && !msaa_enabled) {
+        glEnable(GL_MULTISAMPLE);
+        msaa_enabled = GS_TRUE;
+    }
+
+    if (pipeline->msaa_samples == 0 && msaa_enabled) {
+        glDisable(GL_MULTISAMPLE);
+        msaa_enabled = GS_FALSE;
+    }
 }
 
 void gs_opengl_cmd_use_texture(const GsCommandListItem item) {
@@ -704,14 +772,15 @@ void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *da
     GS_ASSERT(texture != NULL);
     GS_ASSERT(data != NULL);
 
-    gs_opengl_internal_bind_texture(texture, 0);
-    gs_opengl_internal_bind_state();
-
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
+    bound_textures[0] = texture;
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gs_opengl_get_texture_wrap(texture->wrap_s));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gs_opengl_get_texture_wrap(texture->wrap_t));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gs_opengl_get_texture_filter(texture->min));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gs_opengl_get_texture_filter(texture->mag));
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, texture->lodBias);
 
     switch (texture->type) {
         case GS_TEXTURE_TYPE_2D:
@@ -734,10 +803,10 @@ GsUniformLocation gs_opengl_get_uniform_location(GsProgram *program, const char 
 void gs_opengl_generate_mipmaps(GsTexture *texture) {
     GS_ASSERT(texture != NULL);
 
-    gs_opengl_internal_bind_texture(texture, 0);
-    gs_opengl_internal_bind_state();
-
     glActiveTexture(GL_TEXTURE0);
+    glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
+    bound_textures[0] = texture;
+
     glGenerateMipmap(GL_TEXTURE_2D);
 }
 

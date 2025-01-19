@@ -143,6 +143,11 @@ GsPipeline *gs_create_pipeline() {
     GsPipeline *pipeline = GS_ALLOC(GsPipeline);
     pipeline->layout = NULL;
     pipeline->program = NULL;
+    pipeline->blend_dst = GS_BLEND_FACTOR_ONE;
+    pipeline->blend_src = GS_BLEND_FACTOR_ZERO;
+    pipeline->blend_op = GS_BLEND_OP_ADD;
+    pipeline->blend_enabled = GS_FALSE;
+    pipeline->msaa_samples = 0; // disabled
 
     return pipeline;
 }
@@ -479,6 +484,7 @@ GsTexture *gs_create_texture(const int width, const int height, const GsTextureF
     texture->mag = mag;
     texture->type = GS_TEXTURE_TYPE_2D;
     texture->handle = NULL;
+    texture->lodBias = 0.0f;
 
     active_config->backend->create_texture_handle(texture);
 

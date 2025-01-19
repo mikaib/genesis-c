@@ -124,6 +124,32 @@ typedef enum {
     GS_CUBEMAP_FACE_NONE
 } GsCubemapFace;
 
+typedef enum {
+    GS_BLEND_FACTOR_ZERO,
+    GS_BLEND_FACTOR_ONE,
+    GS_BLEND_FACTOR_SRC_COLOR,
+    GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR,
+    GS_BLEND_FACTOR_DST_COLOR,
+    GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR,
+    GS_BLEND_FACTOR_SRC_ALPHA,
+    GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+    GS_BLEND_FACTOR_DST_ALPHA,
+    GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA,
+    GS_BLEND_FACTOR_CONSTANT_COLOR,
+    GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR,
+    GS_BLEND_FACTOR_CONSTANT_ALPHA,
+    GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
+    GS_BLEND_FACTOR_SRC_ALPHA_SATURATE
+} GsBlendFactor;
+
+typedef enum {
+    GS_BLEND_OP_ADD,
+    GS_BLEND_OP_SUBTRACT,
+    GS_BLEND_OP_REVERSE_SUBTRACT,
+    GS_BLEND_OP_MIN,
+    GS_BLEND_OP_MAX
+} GsBlendOp;
+
 typedef int GsUniformLocation;
 
 typedef struct GsBackend GsBackend;
@@ -233,6 +259,11 @@ typedef struct GsCommandList {
 typedef struct GsPipeline {
     GsVtxLayout *layout;
     GsProgram *program;
+    GsBlendFactor blend_src;
+    GsBlendFactor blend_dst;
+    GsBlendOp blend_op;
+    GS_BOOL blend_enabled;
+    int msaa_samples;
 } GsPipeline;
 
 typedef struct GsBuffer {
@@ -357,6 +388,7 @@ typedef struct GsProgram {
 typedef struct GsTexture {
     int width;
     int height;
+    float lodBias;
     GsTextureFormat format;
     GsTextureWrap wrap_s;
     GsTextureWrap wrap_t;
