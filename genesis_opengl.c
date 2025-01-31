@@ -53,6 +53,7 @@ GsBuffer* bound_index_buffer = NULL;
 GsProgram* bound_program = NULL;
 GsVtxLayout* bound_layout = NULL;
 GsTexture** bound_textures = NULL;
+int bound_texture_slot = 0;
 GsBuffer* requested_vertex_buffer = NULL;
 GsBuffer* requested_index_buffer = NULL;
 GsProgram* requested_program = NULL;
@@ -187,6 +188,13 @@ int gs_opengl_get_blend_op(GsBlendOp op) {
     return 0;
 }
 
+void gs_opengl_internal_active_texture(int slot) {
+    if (slot != bound_texture_slot) {
+        glActiveTexture(GL_TEXTURE0 + slot);
+        bound_texture_slot = slot;
+    }
+}
+
 void gs_opengl_internal_bind_state() {
     if (requested_vertex_buffer != bound_vertex_buffer) {
         if (requested_vertex_buffer != NULL) {
@@ -231,11 +239,10 @@ void gs_opengl_internal_bind_state() {
 
     for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         if (requested_textures[i] != bound_textures[i]) {
+            gs_opengl_internal_active_texture(i);
             if (requested_textures[i] != NULL) {
-                glActiveTexture(GL_TEXTURE0 + i);
                 glBindTexture(GL_TEXTURE_2D, *(GLuint*)requested_textures[i]->handle);
             } else {
-                glActiveTexture(GL_TEXTURE0 + i);
                 glBindTexture(GL_TEXTURE_2D, 0);
             }
 
@@ -388,7 +395,7 @@ void gs_opengl_create_buffer(GsBuffer *buffer) {
     GS_ASSERT(buffer != NULL);
 
     GLuint vbo;
-    glGenBuffers(1, &vbo);
+    glCreateBuffers(1, &vbo);
 
     GsOpenGLBufferHandle *handle = GS_ALLOC(GsOpenGLBufferHandle);
     handle->handle = vbo;
@@ -400,16 +407,6 @@ void gs_opengl_create_buffer(GsBuffer *buffer) {
         GLuint vao;
         glGenVertexArrays(1, &vao);
         handle->vaoHandle = vao;
-
-        gs_opengl_internal_unbind_layout();
-        gs_opengl_internal_unbind_buffer(GS_BUFFER_TYPE_VERTEX);
-        gs_opengl_internal_unbind_buffer(GS_BUFFER_TYPE_INDEX);
-        gs_opengl_internal_bind_state();
-
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-        gs_opengl_internal_bind_buffer(buffer);
     }
 
     buffer->handle = (void*)handle;
@@ -419,10 +416,7 @@ void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
     GS_ASSERT(buffer != NULL);
     GS_ASSERT(data != NULL);
     GS_ASSERT(size > 0);
-
-    gs_opengl_internal_bind_buffer(buffer);
-    gs_opengl_internal_bind_state();
-    glBufferData(gs_opengl_get_buffer_type(buffer->type), size, data, gs_opengl_get_buffer_intent(buffer->intent));
+    glNamedBufferData(((GsOpenGLBufferHandle*)buffer->handle)->handle, size, data, gs_opengl_get_buffer_intent(buffer->intent));
 }
 
 void gs_opengl_set_buffer_partial_data(GsBuffer *buffer, void *data, int size, int offset) {
@@ -430,10 +424,7 @@ void gs_opengl_set_buffer_partial_data(GsBuffer *buffer, void *data, int size, i
     GS_ASSERT(data != NULL);
     GS_ASSERT(size > 0);
     GS_ASSERT(offset >= 0);
-
-    gs_opengl_internal_bind_buffer(buffer);
-    gs_opengl_internal_bind_state();
-    glBufferSubData(gs_opengl_get_buffer_type(buffer->type), offset, size, data);
+    glNamedBufferSubData(((GsOpenGLBufferHandle*)buffer->handle)->handle, offset, size, data);
 }
 
 void gs_opengl_destroy_buffer(GsBuffer *buffer) {
@@ -772,7 +763,7 @@ void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *da
     GS_ASSERT(texture != NULL);
     GS_ASSERT(data != NULL);
 
-    glActiveTexture(GL_TEXTURE0);
+    gs_opengl_internal_active_texture(0);
     glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
     bound_textures[0] = texture;
 
@@ -803,7 +794,7 @@ GsUniformLocation gs_opengl_get_uniform_location(GsProgram *program, const char 
 void gs_opengl_generate_mipmaps(GsTexture *texture) {
     GS_ASSERT(texture != NULL);
 
-    glActiveTexture(GL_TEXTURE0);
+    gs_opengl_internal_active_texture(0);
     glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
     bound_textures[0] = texture;
 
