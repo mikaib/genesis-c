@@ -48,6 +48,129 @@ void *gs_opengl_getproc(const char *name) {
 }
 #endif
 
+static const int gs_opengl_attrib_types[] = {
+    [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
+    [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
+    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE
+};
+
+static const int gs_opengl_face_types[] = {
+    [GS_CUBEMAP_FACE_UP]    = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+    [GS_CUBEMAP_FACE_DOWN]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    [GS_CUBEMAP_FACE_LEFT]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+    [GS_CUBEMAP_FACE_RIGHT] = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+    [GS_CUBEMAP_FACE_FRONT] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+    [GS_CUBEMAP_FACE_BACK]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+};
+
+static const int gs_opengl_texture_types[] = {
+    [GS_TEXTURE_TYPE_2D]      = GL_TEXTURE_2D,
+    [GS_TEXTURE_TYPE_CUBEMAP] = GL_TEXTURE_CUBE_MAP
+};
+
+static const int gs_opengl_texture_formats[] = {
+    [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
+    [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
+    [GS_TEXTURE_FORMAT_RGB16F]        = GL_RGB16F,
+    [GS_TEXTURE_FORMAT_RGBA16F]       = GL_RGBA16F,
+    [GS_TEXTURE_FORMAT_DEPTH24_STENCIL8] = GL_DEPTH24_STENCIL8,
+    [GS_TEXTURE_FORMAT_DEPTH32F]      = GL_DEPTH_COMPONENT32F
+};
+
+static const int gs_opengl_texture_wraps[] = {
+    [GS_TEXTURE_WRAP_REPEAT] = GL_REPEAT,
+    [GS_TEXTURE_WRAP_CLAMP]  = GL_CLAMP_TO_EDGE,
+    [GS_TEXTURE_WRAP_MIRROR] = GL_MIRRORED_REPEAT
+};
+
+static const int gs_opengl_texture_filters[] = {
+    [GS_TEXTURE_FILTER_NEAREST]         = GL_NEAREST,
+    [GS_TEXTURE_FILTER_LINEAR]          = GL_LINEAR,
+    [GS_TEXTURE_FILTER_MIPMAP_NEAREST]  = GL_NEAREST_MIPMAP_NEAREST,
+    [GS_TEXTURE_FILTER_MIPMAP_LINEAR]   = GL_LINEAR_MIPMAP_LINEAR
+};
+
+static const int gs_opengl_buffer_types[] = {
+    [GS_BUFFER_TYPE_VERTEX] = GL_ARRAY_BUFFER,
+    [GS_BUFFER_TYPE_INDEX]  = GL_ELEMENT_ARRAY_BUFFER
+};
+
+#if defined(GS_OPENGL_V460)
+static const int gs_opengl_buffer_intents[] = {
+    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_READ,
+    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_READ,
+    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_READ,
+    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_COPY,
+    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_COPY,
+    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_COPY
+};
+#endif
+
+#if defined(GS_OPENGL_V200ES)
+static const int gs_opengl_buffer_intents[] = {
+    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_DRAW
+};
+#endif
+
+static const int gs_opengl_blend_factors[] = {
+    [GS_BLEND_FACTOR_ZERO]                 = GL_ZERO,
+    [GS_BLEND_FACTOR_ONE]                  = GL_ONE,
+    [GS_BLEND_FACTOR_SRC_COLOR]            = GL_SRC_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR]  = GL_ONE_MINUS_SRC_COLOR,
+    [GS_BLEND_FACTOR_DST_COLOR]            = GL_DST_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR]  = GL_ONE_MINUS_DST_COLOR,
+    [GS_BLEND_FACTOR_SRC_ALPHA]            = GL_SRC_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA]  = GL_ONE_MINUS_SRC_ALPHA,
+    [GS_BLEND_FACTOR_DST_ALPHA]            = GL_DST_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA]  = GL_ONE_MINUS_DST_ALPHA,
+    [GS_BLEND_FACTOR_CONSTANT_COLOR]       = GL_CONSTANT_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR] = GL_ONE_MINUS_CONSTANT_COLOR,
+    [GS_BLEND_FACTOR_CONSTANT_ALPHA]       = GL_CONSTANT_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA] = GL_ONE_MINUS_CONSTANT_ALPHA,
+    [GS_BLEND_FACTOR_SRC_ALPHA_SATURATE]   = GL_SRC_ALPHA_SATURATE
+};
+
+static const int gs_opengl_blend_ops[] = {
+    [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
+    [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
+    [GS_BLEND_OP_REVERSE_SUBTRACT] = GL_FUNC_REVERSE_SUBTRACT,
+    [GS_BLEND_OP_MIN]              = GL_MIN,
+    [GS_BLEND_OP_MAX]              = GL_MAX
+};
+
+static const GsCommandHandler gs_opengl_commands [] = {
+    [GS_COMMAND_CLEAR]               = gs_opengl_cmd_clear,
+    [GS_COMMAND_SET_VIEWPORT]        = gs_opengl_cmd_set_viewport,
+    [GS_COMMAND_USE_PIPELINE]        = gs_opengl_cmd_use_pipeline,
+    [GS_COMMAND_USE_BUFFER]          = gs_opengl_cmd_use_buffer,
+    [GS_COMMAND_USE_TEXTURE]         = gs_opengl_cmd_use_texture,
+    [GS_COMMAND_DRAW_ARRAYS]         = gs_opengl_cmd_draw_arrays,
+    [GS_COMMAND_DRAW_INDEXED]        = gs_opengl_cmd_draw_indexed,
+    [GS_COMMAND_SET_SCISSOR]         = gs_opengl_cmd_set_scissor,
+    [GS_COMMAND_SET_UNIFORM_INT]     = gs_opengl_cmd_set_uniform_int,
+    [GS_COMMAND_SET_UNIFORM_FLOAT]   = gs_opengl_cmd_set_uniform_float,
+    [GS_COMMAND_SET_UNIFORM_VEC2]    = gs_opengl_cmd_set_uniform_vec2,
+    [GS_COMMAND_SET_UNIFORM_VEC3]    = gs_opengl_cmd_set_uniform_vec3,
+    [GS_COMMAND_SET_UNIFORM_VEC4]    = gs_opengl_cmd_set_uniform_vec4,
+    [GS_COMMAND_SET_UNIFORM_MAT4]    = gs_opengl_cmd_set_uniform_mat4,
+    [GS_COMMAND_COPY_TEXTURE]        = gs_opengl_cmd_copy_texture,
+    [GS_COMMAND_RESOLVE_TEXTURE]     = gs_opengl_cmd_resolve_texture,
+    [GS_COMMAND_GEN_MIPMAPS]         = gs_opengl_cmd_generate_mipmaps,
+    [GS_COMMAND_COPY_TEXTURE_PARTIAL] = gs_opengl_cmd_copy_texture_partial,
+};
+
+// State
 GsBuffer* bound_vertex_buffer = NULL;
 GsBuffer* bound_index_buffer = NULL;
 GsProgram* bound_program = NULL;
@@ -547,68 +670,16 @@ void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item) {
 }
 
 void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
+    GS_ASSERT(backend != NULL);
+    GS_ASSERT(list != NULL);
+
     for (int i = 0; i < list->count; i++) {
         const GsCommandListItem item = list->items[i];
+        GS_ASSERT(item.type >= 0);
+        GS_ASSERT(item.type < GS_TABLE_SIZE(gs_opengl_commands));
 
-        switch (item.type) {
-            case GS_COMMAND_CLEAR:
-                gs_opengl_cmd_clear(item);
-                break;
-            case GS_COMMAND_SET_VIEWPORT:
-                gs_opengl_cmd_set_viewport(item);
-                break;
-            case GS_COMMAND_USE_PIPELINE:
-                gs_opengl_cmd_use_pipeline(item);
-                break;
-            case GS_COMMAND_USE_BUFFER:
-                gs_opengl_cmd_use_buffer(item);
-                break;
-            case GS_COMMAND_USE_TEXTURE:
-                gs_opengl_cmd_use_texture(item);
-                break;
-            case GS_COMMAND_DRAW_ARRAYS:
-                gs_opengl_cmd_draw_arrays(item);
-                break;
-            case GS_COMMAND_DRAW_INDEXED:
-                gs_opengl_cmd_draw_indexed(item);
-                break;
-            case GS_COMMAND_SET_SCISSOR:
-                gs_opengl_cmd_set_scissor(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_INT:
-                gs_opengl_cmd_set_uniform_int(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_FLOAT:
-                gs_opengl_cmd_set_uniform_float(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_VEC2:
-                gs_opengl_cmd_set_uniform_vec2(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_VEC3:
-                gs_opengl_cmd_set_uniform_vec3(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_VEC4:
-                gs_opengl_cmd_set_uniform_vec4(item);
-                break;
-            case GS_COMMAND_SET_UNIFORM_MAT4:
-                gs_opengl_cmd_set_uniform_mat4(item);
-                break;
-            case GS_COMMAND_COPY_TEXTURE:
-                gs_opengl_cmd_copy_texture(item);
-                break;
-            case GS_COMMAND_RESOLVE_TEXTURE:
-                gs_opengl_cmd_resolve_texture(item);
-                break;
-            case GS_COMMAND_GEN_MIPMAPS:
-                gs_opengl_cmd_generate_mipmaps(item);
-                break;
-            case GS_COMMAND_COPY_TEXTURE_PARTIAL:
-                gs_opengl_cmd_copy_texture_partial(item);
-                break;
-            default:
-                gs_handle_internal_command(item);
-                break;
-        }
+        const GsCommandHandler handler = gs_opengl_commands[item.type];
+        handler(item);
     }
 }
 
@@ -660,107 +731,6 @@ void gs_opengl_destroy_program(GsProgram *program) {
     GS_FREE(program->handle);
     program->handle = NULL;
 }
-
-static const int gs_opengl_attrib_types[] = {
-    [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
-    [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
-    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE
-};
-
-static const int gs_opengl_face_types[] = {
-    [GS_CUBEMAP_FACE_UP]    = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
-    [GS_CUBEMAP_FACE_DOWN]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
-    [GS_CUBEMAP_FACE_LEFT]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
-    [GS_CUBEMAP_FACE_RIGHT] = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
-    [GS_CUBEMAP_FACE_FRONT] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
-    [GS_CUBEMAP_FACE_BACK]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
-};
-
-static const int gs_opengl_texture_types[] = {
-    [GS_TEXTURE_TYPE_2D]      = GL_TEXTURE_2D,
-    [GS_TEXTURE_TYPE_CUBEMAP] = GL_TEXTURE_CUBE_MAP
-};
-
-static const int gs_opengl_texture_formats[] = {
-    [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
-    [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
-    [GS_TEXTURE_FORMAT_RGB16F]        = GL_RGB16F,
-    [GS_TEXTURE_FORMAT_RGBA16F]       = GL_RGBA16F,
-    [GS_TEXTURE_FORMAT_DEPTH24_STENCIL8] = GL_DEPTH24_STENCIL8,
-    [GS_TEXTURE_FORMAT_DEPTH32F]      = GL_DEPTH_COMPONENT32F
-};
-
-static const int gs_opengl_texture_wraps[] = {
-    [GS_TEXTURE_WRAP_REPEAT] = GL_REPEAT,
-    [GS_TEXTURE_WRAP_CLAMP]  = GL_CLAMP_TO_EDGE,
-    [GS_TEXTURE_WRAP_MIRROR] = GL_MIRRORED_REPEAT
-};
-
-static const int gs_opengl_texture_filters[] = {
-    [GS_TEXTURE_FILTER_NEAREST]         = GL_NEAREST,
-    [GS_TEXTURE_FILTER_LINEAR]          = GL_LINEAR,
-    [GS_TEXTURE_FILTER_MIPMAP_NEAREST]  = GL_NEAREST_MIPMAP_NEAREST,
-    [GS_TEXTURE_FILTER_MIPMAP_LINEAR]   = GL_LINEAR_MIPMAP_LINEAR
-};
-
-static const int gs_opengl_buffer_types[] = {
-    [GS_BUFFER_TYPE_VERTEX] = GL_ARRAY_BUFFER,
-    [GS_BUFFER_TYPE_INDEX]  = GL_ELEMENT_ARRAY_BUFFER
-};
-
-#if defined(GS_OPENGL_V460)
-static const int gs_opengl_buffer_intents[] = {
-    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
-    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
-    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
-    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_READ,
-    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_READ,
-    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_READ,
-    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_COPY,
-    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_COPY,
-    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_COPY
-};
-#endif
-
-#if defined(GS_OPENGL_V200ES)
-static const int gs_opengl_buffer_intents[] = {
-    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
-    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
-    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
-    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_DRAW,
-    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_DRAW,
-    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_DRAW,
-    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_DRAW,
-    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_DRAW,
-    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_DRAW
-};
-#endif
-
-static const int gs_opengl_blend_factors[] = {
-    [GS_BLEND_FACTOR_ZERO]                 = GL_ZERO,
-    [GS_BLEND_FACTOR_ONE]                  = GL_ONE,
-    [GS_BLEND_FACTOR_SRC_COLOR]            = GL_SRC_COLOR,
-    [GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR]  = GL_ONE_MINUS_SRC_COLOR,
-    [GS_BLEND_FACTOR_DST_COLOR]            = GL_DST_COLOR,
-    [GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR]  = GL_ONE_MINUS_DST_COLOR,
-    [GS_BLEND_FACTOR_SRC_ALPHA]            = GL_SRC_ALPHA,
-    [GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA]  = GL_ONE_MINUS_SRC_ALPHA,
-    [GS_BLEND_FACTOR_DST_ALPHA]            = GL_DST_ALPHA,
-    [GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA]  = GL_ONE_MINUS_DST_ALPHA,
-    [GS_BLEND_FACTOR_CONSTANT_COLOR]       = GL_CONSTANT_COLOR,
-    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR] = GL_ONE_MINUS_CONSTANT_COLOR,
-    [GS_BLEND_FACTOR_CONSTANT_ALPHA]       = GL_CONSTANT_ALPHA,
-    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA] = GL_ONE_MINUS_CONSTANT_ALPHA,
-    [GS_BLEND_FACTOR_SRC_ALPHA_SATURATE]   = GL_SRC_ALPHA_SATURATE
-};
-
-static const int gs_opengl_blend_ops[] = {
-    [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
-    [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
-    [GS_BLEND_OP_REVERSE_SUBTRACT] = GL_FUNC_REVERSE_SUBTRACT,
-    [GS_BLEND_OP_MIN]              = GL_MIN,
-    [GS_BLEND_OP_MAX]              = GL_MAX
-};
 
 int gs_opengl_get_buffer_type(GsBufferType type) {
     GS_ASSERT(type >= 0);
