@@ -43,9 +43,9 @@
 
 #ifndef GS_OPENGL_PLATFORM_IMPL
 void *gs_opengl_getproc(const char *name) {
-        printf("gs_opengl_getproc not implemented for platform.\n");
-        return NULL;
-    }
+    printf("gs_opengl_getproc not implemented for platform.\n");
+    return NULL;
+}
 #endif
 
 GsBuffer* bound_vertex_buffer = NULL;
@@ -111,81 +111,6 @@ GsBackend *gs_opengl_create() {
     }
 
     return backend;
-}
-
-int gs_opengl_get_buffer_type(GsBufferType type) {
-    switch (type) {
-        case GS_BUFFER_TYPE_VERTEX: return GL_ARRAY_BUFFER;
-        case GS_BUFFER_TYPE_INDEX: return GL_ELEMENT_ARRAY_BUFFER;
-    }
-
-    return 0;
-}
-
-int gs_opengl_get_buffer_intent(GsBufferIntent intent) {
-    #ifdef GS_OPENGL_V460
-    switch (intent) {
-        case GS_BUFFER_INTENT_DRAW_STATIC: return GL_STATIC_DRAW;
-        case GS_BUFFER_INTENT_DRAW_DYNAMIC: return GL_DYNAMIC_DRAW;
-        case GS_BUFFER_INTENT_DRAW_STREAM: return GL_STREAM_DRAW;
-        case GS_BUFFER_INTENT_READ_STATIC: return GL_STATIC_READ;
-        case GS_BUFFER_INTENT_READ_DYNAMIC: return GL_DYNAMIC_READ;
-        case GS_BUFFER_INTENT_READ_STREAM: return GL_STREAM_READ;
-        case GS_BUFFER_INTENT_COPY_STATIC: return GL_STATIC_COPY;
-        case GS_BUFFER_INTENT_COPY_DYNAMIC: return GL_DYNAMIC_COPY;
-        case GS_BUFFER_INTENT_COPY_STREAM: return GL_STREAM_COPY;
-    }
-    #endif
-
-    #ifdef GS_OPENGL_V200ES
-    switch (intent) {
-        case GS_BUFFER_INTENT_DRAW_STATIC: return GL_STATIC_DRAW;
-        case GS_BUFFER_INTENT_DRAW_DYNAMIC: return GL_DYNAMIC_DRAW;
-        case GS_BUFFER_INTENT_DRAW_STREAM: return GL_STREAM_DRAW;
-        case GS_BUFFER_INTENT_READ_STATIC: return GL_STATIC_DRAW;
-        case GS_BUFFER_INTENT_READ_DYNAMIC: return GL_DYNAMIC_DRAW;
-        case GS_BUFFER_INTENT_READ_STREAM: return GL_STREAM_DRAW;
-        case GS_BUFFER_INTENT_COPY_STATIC: return GL_STATIC_DRAW;
-        case GS_BUFFER_INTENT_COPY_DYNAMIC: return GL_DYNAMIC_DRAW;
-        case GS_BUFFER_INTENT_COPY_STREAM: return GL_STREAM_DRAW;
-    }
-    #endif
-
-    return 0;
-}
-
-int gs_opengl_get_blend_factor(GsBlendFactor factor) {
-    switch (factor) {
-        case GS_BLEND_FACTOR_ZERO: return GL_ZERO;
-        case GS_BLEND_FACTOR_ONE: return GL_ONE;
-        case GS_BLEND_FACTOR_SRC_COLOR: return GL_SRC_COLOR;
-        case GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR: return GL_ONE_MINUS_SRC_COLOR;
-        case GS_BLEND_FACTOR_DST_COLOR: return GL_DST_COLOR;
-        case GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR: return GL_ONE_MINUS_DST_COLOR;
-        case GS_BLEND_FACTOR_SRC_ALPHA: return GL_SRC_ALPHA;
-        case GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA: return GL_ONE_MINUS_SRC_ALPHA;
-        case GS_BLEND_FACTOR_DST_ALPHA: return GL_DST_ALPHA;
-        case GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA: return GL_ONE_MINUS_DST_ALPHA;
-        case GS_BLEND_FACTOR_CONSTANT_COLOR: return GL_CONSTANT_COLOR;
-        case GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR: return GL_ONE_MINUS_CONSTANT_COLOR;
-        case GS_BLEND_FACTOR_CONSTANT_ALPHA: return GL_CONSTANT_ALPHA;
-        case GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA: return GL_ONE_MINUS_CONSTANT_ALPHA;
-        case GS_BLEND_FACTOR_SRC_ALPHA_SATURATE: return GL_SRC_ALPHA_SATURATE;
-    }
-
-    return 0;
-}
-
-int gs_opengl_get_blend_op(GsBlendOp op) {
-    switch (op) {
-        case GS_BLEND_OP_ADD: return GL_FUNC_ADD;
-        case GS_BLEND_OP_SUBTRACT: return GL_FUNC_SUBTRACT;
-        case GS_BLEND_OP_REVERSE_SUBTRACT: return GL_FUNC_REVERSE_SUBTRACT;
-        case GS_BLEND_OP_MIN: return GL_MIN;
-        case GS_BLEND_OP_MAX: return GL_MAX;
-    }
-
-    return 0;
 }
 
 void gs_opengl_internal_active_texture(int slot) {
@@ -777,6 +702,93 @@ static const int gs_opengl_texture_filters[] = {
     [GS_TEXTURE_FILTER_MIPMAP_NEAREST]  = GL_NEAREST_MIPMAP_NEAREST,
     [GS_TEXTURE_FILTER_MIPMAP_LINEAR]   = GL_LINEAR_MIPMAP_LINEAR
 };
+
+static const int gs_opengl_buffer_types[] = {
+    [GS_BUFFER_TYPE_VERTEX] = GL_ARRAY_BUFFER,
+    [GS_BUFFER_TYPE_INDEX]  = GL_ELEMENT_ARRAY_BUFFER
+};
+
+#if defined(GS_OPENGL_V460)
+static const int gs_opengl_buffer_intents[] = {
+    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_READ,
+    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_READ,
+    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_READ,
+    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_COPY,
+    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_COPY,
+    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_COPY
+};
+#endif
+
+#if defined(GS_OPENGL_V200ES)
+static const int gs_opengl_buffer_intents[] = {
+    [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_DRAW_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_READ_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_READ_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_READ_STREAM]  = GL_STREAM_DRAW,
+    [GS_BUFFER_INTENT_COPY_STATIC]  = GL_STATIC_DRAW,
+    [GS_BUFFER_INTENT_COPY_DYNAMIC] = GL_DYNAMIC_DRAW,
+    [GS_BUFFER_INTENT_COPY_STREAM]  = GL_STREAM_DRAW
+};
+#endif
+
+static const int gs_opengl_blend_factors[] = {
+    [GS_BLEND_FACTOR_ZERO]                 = GL_ZERO,
+    [GS_BLEND_FACTOR_ONE]                  = GL_ONE,
+    [GS_BLEND_FACTOR_SRC_COLOR]            = GL_SRC_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_SRC_COLOR]  = GL_ONE_MINUS_SRC_COLOR,
+    [GS_BLEND_FACTOR_DST_COLOR]            = GL_DST_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_DST_COLOR]  = GL_ONE_MINUS_DST_COLOR,
+    [GS_BLEND_FACTOR_SRC_ALPHA]            = GL_SRC_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA]  = GL_ONE_MINUS_SRC_ALPHA,
+    [GS_BLEND_FACTOR_DST_ALPHA]            = GL_DST_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_DST_ALPHA]  = GL_ONE_MINUS_DST_ALPHA,
+    [GS_BLEND_FACTOR_CONSTANT_COLOR]       = GL_CONSTANT_COLOR,
+    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR] = GL_ONE_MINUS_CONSTANT_COLOR,
+    [GS_BLEND_FACTOR_CONSTANT_ALPHA]       = GL_CONSTANT_ALPHA,
+    [GS_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA] = GL_ONE_MINUS_CONSTANT_ALPHA,
+    [GS_BLEND_FACTOR_SRC_ALPHA_SATURATE]   = GL_SRC_ALPHA_SATURATE
+};
+
+static const int gs_opengl_blend_ops[] = {
+    [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
+    [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
+    [GS_BLEND_OP_REVERSE_SUBTRACT] = GL_FUNC_REVERSE_SUBTRACT,
+    [GS_BLEND_OP_MIN]              = GL_MIN,
+    [GS_BLEND_OP_MAX]              = GL_MAX
+};
+
+int gs_opengl_get_buffer_type(GsBufferType type) {
+    GS_ASSERT(type >= 0);
+    GS_ASSERT(type < GS_TABLE_SIZE(gs_opengl_buffer_types));
+
+    return gs_opengl_buffer_types[type];
+}
+
+int gs_opengl_get_buffer_intent(GsBufferIntent intent) {
+    GS_ASSERT(intent >= 0);
+    GS_ASSERT(intent < GS_TABLE_SIZE(gs_opengl_buffer_intents));
+
+    return gs_opengl_buffer_intents[intent];
+}
+
+int gs_opengl_get_blend_factor(GsBlendFactor factor) {
+    GS_ASSERT(factor >= 0);
+    GS_ASSERT(factor < GS_TABLE_SIZE(gs_opengl_blend_factors));
+
+    return gs_opengl_blend_factors[factor];
+}
+
+int gs_opengl_get_blend_op(GsBlendOp op) {
+    GS_ASSERT(op >= 0);
+    GS_ASSERT(op < GS_TABLE_SIZE(gs_opengl_blend_ops));
+
+    return gs_opengl_blend_ops[op];
+}
 
 int gs_opengl_get_attrib_type(GsVtxAttribType type) {
     GS_ASSERT(type >= 0);
