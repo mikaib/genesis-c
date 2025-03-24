@@ -736,64 +736,88 @@ void gs_opengl_destroy_program(GsProgram *program) {
     program->handle = NULL;
 }
 
+static const int gs_opengl_attrib_types[] = {
+    [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
+    [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
+    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE
+};
+
+static const int gs_opengl_face_types[] = {
+    [GS_CUBEMAP_FACE_UP]    = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
+    [GS_CUBEMAP_FACE_DOWN]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    [GS_CUBEMAP_FACE_LEFT]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_X,
+    [GS_CUBEMAP_FACE_RIGHT] = GL_TEXTURE_CUBE_MAP_POSITIVE_X,
+    [GS_CUBEMAP_FACE_FRONT] = GL_TEXTURE_CUBE_MAP_POSITIVE_Z,
+    [GS_CUBEMAP_FACE_BACK]  = GL_TEXTURE_CUBE_MAP_NEGATIVE_Z
+};
+
+static const int gs_opengl_texture_types[] = {
+    [GS_TEXTURE_TYPE_2D]      = GL_TEXTURE_2D,
+    [GS_TEXTURE_TYPE_CUBEMAP] = GL_TEXTURE_CUBE_MAP
+};
+
+static const int gs_opengl_texture_formats[] = {
+    [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
+    [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
+    [GS_TEXTURE_FORMAT_RGB16F]        = GL_RGB16F,
+    [GS_TEXTURE_FORMAT_RGBA16F]       = GL_RGBA16F,
+    [GS_TEXTURE_FORMAT_DEPTH24_STENCIL8] = GL_DEPTH24_STENCIL8,
+    [GS_TEXTURE_FORMAT_DEPTH32F]      = GL_DEPTH_COMPONENT32F
+};
+
+static const int gs_opengl_texture_wraps[] = {
+    [GS_TEXTURE_WRAP_REPEAT] = GL_REPEAT,
+    [GS_TEXTURE_WRAP_CLAMP]  = GL_CLAMP_TO_EDGE,
+    [GS_TEXTURE_WRAP_MIRROR] = GL_MIRRORED_REPEAT
+};
+
+static const int gs_opengl_texture_filters[] = {
+    [GS_TEXTURE_FILTER_NEAREST]         = GL_NEAREST,
+    [GS_TEXTURE_FILTER_LINEAR]          = GL_LINEAR,
+    [GS_TEXTURE_FILTER_MIPMAP_NEAREST]  = GL_NEAREST_MIPMAP_NEAREST,
+    [GS_TEXTURE_FILTER_MIPMAP_LINEAR]   = GL_LINEAR_MIPMAP_LINEAR
+};
+
 int gs_opengl_get_attrib_type(GsVtxAttribType type) {
-    switch (type) {
-        case GS_ATTRIB_TYPE_FLOAT: return GL_FLOAT;
-        case GS_ATTRIB_TYPE_INT16: return GL_SHORT;
-        case GS_ATTRIB_TYPE_UINT8: return GL_UNSIGNED_BYTE;
-        default: return GL_FLOAT;
-    }
+    GS_ASSERT(type >= 0);
+    GS_ASSERT(type < GS_TABLE_SIZE(gs_opengl_attrib_types));
+
+    return gs_opengl_attrib_types[type];
 }
 
 int gs_opengl_get_face_type(GsCubemapFace face) {
-    switch (face) {
-        case GS_CUBEMAP_FACE_UP: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-        case GS_CUBEMAP_FACE_DOWN: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Y;
-        case GS_CUBEMAP_FACE_LEFT: return GL_TEXTURE_CUBE_MAP_NEGATIVE_X;
-        case GS_CUBEMAP_FACE_RIGHT: return GL_TEXTURE_CUBE_MAP_POSITIVE_X;
-        case GS_CUBEMAP_FACE_FRONT: return GL_TEXTURE_CUBE_MAP_POSITIVE_Z;
-        case GS_CUBEMAP_FACE_BACK: return GL_TEXTURE_CUBE_MAP_NEGATIVE_Z;
-        default: return GL_TEXTURE_CUBE_MAP_POSITIVE_Y;
-    }
+    GS_ASSERT(face >= 0);
+    GS_ASSERT(face < GS_TABLE_SIZE(gs_opengl_face_types));
+
+    return gs_opengl_face_types[face];
 }
 
 int gs_opengl_get_texture_type(GsTextureType type) {
-    switch (type) {
-        case GS_TEXTURE_TYPE_2D: return GL_TEXTURE_2D;
-        case GS_TEXTURE_TYPE_CUBEMAP: return GL_TEXTURE_CUBE_MAP;
-        default: return GL_TEXTURE_2D;
-    }
+    GS_ASSERT(type >= 0);
+    GS_ASSERT(type < GS_TABLE_SIZE(gs_opengl_texture_types));
+
+    return gs_opengl_texture_types[type];
 }
 
 int gs_opengl_get_texture_format(GsTextureFormat format) {
-    switch (format) {
-        case GS_TEXTURE_FORMAT_RGBA8: return GL_RGBA;
-        case GS_TEXTURE_FORMAT_RGB8: return GL_RGB;
-        case GS_TEXTURE_FORMAT_RGB16F: return GL_RGB16F;
-        case GS_TEXTURE_FORMAT_RGBA16F: return GL_RGBA16F;
-        case GS_TEXTURE_FORMAT_DEPTH24_STENCIL8: return GL_DEPTH24_STENCIL8;
-        case GS_TEXTURE_FORMAT_DEPTH32F: return GL_DEPTH_COMPONENT32F;
-        default: return GL_RGBA;
-    }
+    GS_ASSERT(format >= 0);
+    GS_ASSERT(format < GS_TABLE_SIZE(gs_opengl_texture_formats));
+
+    return gs_opengl_texture_formats[format];
 }
 
 int gs_opengl_get_texture_wrap(GsTextureWrap wrap) {
-    switch (wrap) {
-        case GS_TEXTURE_WRAP_REPEAT: return GL_REPEAT;
-        case GS_TEXTURE_WRAP_CLAMP: return GL_CLAMP_TO_EDGE;
-        case GS_TEXTURE_WRAP_MIRROR: return GL_MIRRORED_REPEAT;
-        default: return GL_REPEAT;
-    }
+    GS_ASSERT(wrap >= 0);
+    GS_ASSERT(wrap < GS_TABLE_SIZE(gs_opengl_texture_wraps));
+
+    return gs_opengl_texture_wraps[wrap];
 }
 
 int gs_opengl_get_texture_filter(GsTextureFilter filter) {
-    switch (filter) {
-        case GS_TEXTURE_FILTER_NEAREST: return GL_NEAREST;
-        case GS_TEXTURE_FILTER_LINEAR: return GL_LINEAR;
-        case GS_TEXTURE_FILTER_MIPMAP_NEAREST: return GL_NEAREST_MIPMAP_NEAREST;
-        case GS_TEXTURE_FILTER_MIPMAP_LINEAR: return GL_LINEAR_MIPMAP_LINEAR;
-        default: return GL_NEAREST;
-    }
+    GS_ASSERT(filter >= 0);
+    GS_ASSERT(filter < GS_TABLE_SIZE(gs_opengl_texture_filters));
+
+    return gs_opengl_texture_filters[filter];
 }
 
 void gs_opengl_create_texture(GsTexture *texture) {

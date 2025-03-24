@@ -23,6 +23,7 @@ extern "C"
 #define GS_ALLOC(obj) GS_ALLOC_MULTIPLE(obj, 1)
 #define GS_FREE(obj) free(obj)
 
+#define GS_TABLE_SIZE(arr) (int)(sizeof(arr) / sizeof((arr)[0]))
 #define GS_BOOL int
 #define GS_TRUE 1
 #define GS_FALSE 0
