@@ -587,6 +587,40 @@ void gs_opengl_cmd_set_scissor(const GsCommandListItem item) {
     }
 }
 
+void gs_opengl_cmd_copy_texture(const GsCommandListItem item) {
+    const GsCopyTextureCommand *cmd = (GsCopyTextureCommand *) item.data;
+
+    gs_opengl_internal_bind_texture(cmd->src, 0);
+    gs_opengl_internal_bind_texture(cmd->dst, 1);
+
+    glCopyImageSubData(*(GLuint*)cmd->src->handle, GL_TEXTURE_2D, 0, 0, 0, 0, *(GLuint*)cmd->dst->handle, GL_TEXTURE_2D, 0, 0, 0, 0, cmd->src->width, cmd->src->height, 1);
+}
+
+void gs_opengl_cmd_resolve_texture(const GsCommandListItem item) {
+    const GsResolveTextureCommand *cmd = (GsResolveTextureCommand *) item.data;
+
+    gs_opengl_internal_bind_texture(cmd->src, 0);
+    gs_opengl_internal_bind_texture(cmd->dst, 1);
+
+    glBlitFramebuffer(0, 0, cmd->src->width, cmd->src->height, 0, 0, cmd->dst->width, cmd->dst->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
+void gs_opengl_cmd_generate_mipmaps(const GsCommandListItem item) {
+    const GsGenMipmapsCommand *cmd = (GsGenMipmapsCommand *) item.data;
+
+    gs_opengl_internal_bind_texture(cmd->texture, 0);
+    glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item) {
+    const GsCopyTexturePartialCommand *cmd = (GsCopyTexturePartialCommand *) item.data;
+
+    gs_opengl_internal_bind_texture(cmd->src, 0);
+    gs_opengl_internal_bind_texture(cmd->dst, 1);
+
+    glCopyImageSubData(*(GLuint*)cmd->src->handle, GL_TEXTURE_2D, 0, cmd->src_x, cmd->src_y, 0, *(GLuint*)cmd->dst->handle, GL_TEXTURE_2D, 0, cmd->dst_x, cmd->dst_y, 0, cmd->width, cmd->height, 1);
+}
+
 void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
     for (int i = 0; i < list->count; i++) {
         const GsCommandListItem item = list->items[i];
@@ -633,6 +667,18 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
                 break;
             case GS_COMMAND_SET_UNIFORM_MAT4:
                 gs_opengl_cmd_set_uniform_mat4(item);
+                break;
+            case GS_COMMAND_COPY_TEXTURE:
+                gs_opengl_cmd_copy_texture(item);
+                break;
+            case GS_COMMAND_RESOLVE_TEXTURE:
+                gs_opengl_cmd_resolve_texture(item);
+                break;
+            case GS_COMMAND_GEN_MIPMAPS:
+                gs_opengl_cmd_generate_mipmaps(item);
+                break;
+            case GS_COMMAND_COPY_TEXTURE_PARTIAL:
+                gs_opengl_cmd_copy_texture_partial(item);
                 break;
             default:
                 gs_handle_internal_command(item);

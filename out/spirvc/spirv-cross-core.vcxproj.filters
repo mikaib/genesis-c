@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\mana25\genesis\Native\spirvc\spirv_cross.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\mana25\genesis\Native\spirvc\spirv_parser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\mana25\genesis\Native\spirvc\spirv_cross_parsed_ir.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\mana25\genesis\Native\spirvc\spirv_cfg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\GLSL.std.450.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_common.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_cross_containers.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_cross_error_handling.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_cross.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_parser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_cross_parsed_ir.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\mana25\genesis\Native\spirvc\spirv_cfg.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\mana25\genesis\Native\spirvc\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{73186174-2ABF-3A93-82BB-28A737B19988}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{2D5D40CF-D64D-37D3-83D2-FE68E5651292}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

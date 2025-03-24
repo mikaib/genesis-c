@@ -619,6 +619,58 @@ void gs_uniform_set_mat4(GsCommandList *list, GsUniformLocation location, float 
     gs_command_list_add(list, GS_COMMAND_SET_UNIFORM_MAT4, data, sizeof(GsUniformMat4Command));
 }
 
+void gs_copy_texture(GsCommandList *list, GsTexture *src, GsTexture *dst) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(src != NULL);
+    GS_ASSERT(dst != NULL);
+
+    GsCopyTextureCommand *data = GS_ALLOC(GsCopyTextureCommand);
+    data->src = src;
+    data->dst = dst;
+
+    gs_command_list_add(list, GS_COMMAND_COPY_TEXTURE, data, sizeof(GsCopyTextureCommand));
+}
+
+void gs_resolve_texture(GsCommandList *list, GsTexture *src, GsTexture *dst) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(src != NULL);
+    GS_ASSERT(dst != NULL);
+
+    GsResolveTextureCommand *data = GS_ALLOC(GsResolveTextureCommand);
+    data->src = src;
+    data->dst = dst;
+
+    gs_command_list_add(list, GS_COMMAND_RESOLVE_TEXTURE, data, sizeof(GsResolveTextureCommand));
+}
+
+void gs_copy_texture_partial(GsCommandList *list, GsTexture *src, GsTexture *dst, const int src_x, const int src_y, const int dst_x, const int dst_y, const int width, const int height) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(src != NULL);
+    GS_ASSERT(dst != NULL);
+
+    GsCopyTexturePartialCommand *data = GS_ALLOC(GsCopyTexturePartialCommand);
+    data->src = src;
+    data->dst = dst;
+    data->src_x = src_x;
+    data->src_y = src_y;
+    data->dst_x = dst_x;
+    data->dst_y = dst_y;
+    data->width = width;
+    data->height = height;
+
+    gs_command_list_add(list, GS_COMMAND_COPY_TEXTURE_PARTIAL, data, sizeof(GsCopyTexturePartialCommand));
+}
+
+void gs_generate_mipmaps(GsCommandList *list, GsTexture *texture) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(texture != NULL);
+
+    GsGenMipmapsCommand *data = GS_ALLOC(GsGenMipmapsCommand);
+    data->texture = texture;
+
+    gs_command_list_add(list, GS_COMMAND_GEN_MIPMAPS, data, sizeof(GsGenMipmapsCommand));
+}
+
 void gs_destroy_texture(GsTexture *texture) {
     GS_ASSERT(texture != NULL);
     GS_ASSERT(active_config != NULL);

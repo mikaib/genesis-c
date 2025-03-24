@@ -56,7 +56,11 @@ typedef enum {
     GS_COMMAND_SET_UNIFORM_VEC2,
     GS_COMMAND_SET_UNIFORM_VEC3,
     GS_COMMAND_SET_UNIFORM_VEC4,
-    GS_COMMAND_SET_UNIFORM_MAT4
+    GS_COMMAND_SET_UNIFORM_MAT4,
+    GS_COMMAND_COPY_TEXTURE,
+    GS_COMMAND_COPY_TEXTURE_PARTIAL,
+    GS_COMMAND_RESOLVE_TEXTURE,
+    GS_COMMAND_GEN_MIPMAPS,
 } GsCommandType;
 
 typedef enum {
@@ -178,6 +182,10 @@ typedef struct GsUniformVec2Command GsUniformVec2Command;
 typedef struct GsUniformVec3Command GsUniformVec3Command;
 typedef struct GsUniformVec4Command GsUniformVec4Command;
 typedef struct GsUniformMat4Command GsUniformMat4Command;
+typedef struct GsCopyTextureCommand GsCopyTextureCommand;
+typedef struct GsCopyTexturePartialCommand GsCopyTexturePartialCommand;
+typedef struct GsResolveTextureCommand GsResolveTextureCommand;
+typedef struct GsGenMipmapsCommand GsGenMipmapsCommand;
 
 typedef struct GsConfig {
     // config
@@ -399,6 +407,31 @@ typedef struct GsTexture {
     void *handle;
 } GsTexture;
 
+typedef struct GsCopyTextureCommand {
+    GsTexture *src;
+    GsTexture *dst;
+} GsCopyTextureCommand;
+
+typedef struct GsCopyTexturePartialCommand {
+    GsTexture *src;
+    GsTexture *dst;
+    int src_x;
+    int src_y;
+    int dst_x;
+    int dst_y;
+    int width;
+    int height;
+} GsCopyTexturePartialCommand;
+
+typedef struct GsResolveTextureCommand {
+    GsTexture *src;
+    GsTexture *dst;
+} GsResolveTextureCommand;
+
+typedef struct GsGenMipmapsCommand {
+    GsTexture *texture;
+} GsGenMipmapsCommand;
+
 // Textures
 GsTexture *gs_create_texture(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureFilter min, GsTextureFilter mag);
 GsTexture *gs_create_cubemap(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureWrap wrap_r, GsTextureFilter min, GsTextureFilter mag);
@@ -451,6 +484,10 @@ void gs_uniform_set_vec2(GsCommandList *list, GsUniformLocation location, float 
 void gs_uniform_set_vec3(GsCommandList *list, GsUniformLocation location, float x, float y, float z);
 void gs_uniform_set_vec4(GsCommandList *list, GsUniformLocation location, float x, float y, float z, float w);
 void gs_uniform_set_mat4(GsCommandList *list, GsUniformLocation location, float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33);
+void gs_copy_texture(GsCommandList *list, GsTexture *src, GsTexture *dst);
+void gs_resolve_texture(GsCommandList *list, GsTexture *src, GsTexture *dst);
+void gs_copy_texture_partial(GsCommandList *list, GsTexture *src, GsTexture *dst, int src_x, int src_y, int dst_x, int dst_y, int width, int height);
+void gs_generate_mipmaps(GsCommandList *list, GsTexture *texture);
 void gs_command_list_end(GsCommandList *list);
 void gs_command_list_submit(GsCommandList *list);
 void gs_destroy_command_list(GsCommandList *list);

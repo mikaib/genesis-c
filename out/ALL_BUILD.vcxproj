@@ -1,0 +1,224 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <PropertyGroup>
+    <ResolveNugetPackages>false</ResolveNugetPackages>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="MinSizeRel|x64">
+      <Configuration>MinSizeRel</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="RelWithDebInfo|x64">
+      <Configuration>RelWithDebInfo</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CFBD67A9-D64D-38DC-BD31-D83428431456}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>ALL_BUILD</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'" Label="Configuration">
+    <ConfigurationType>Utility</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\mana25\genesis\Native\.;C:\mana25\genesis\Native\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\mana25\genesis\Native\.;C:\mana25\genesis\Native\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\mana25\genesis\Native\.;C:\mana25\genesis\Native\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
+    <Midl>
+      <AdditionalIncludeDirectories>C:\mana25\genesis\Native\.;C:\mana25\genesis\Native\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\mana25\genesis\Native\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/mana25/genesis/Native/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\bin\cmake.exe -SC:/mana25/genesis/Native -BC:/mana25/genesis/Native/out --check-stamp-file C:/mana25/genesis/Native/out/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeRCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\mana25\genesis\Native\out\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/mana25/genesis/Native/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\bin\cmake.exe -SC:/mana25/genesis/Native -BC:/mana25/genesis/Native/out --check-stamp-file C:/mana25/genesis/Native/out/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeRCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\mana25\genesis\Native\out\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">Building Custom Rule C:/mana25/genesis/Native/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">setlocal
+C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\bin\cmake.exe -SC:/mana25/genesis/Native -BC:/mana25/genesis/Native/out --check-stamp-file C:/mana25/genesis/Native/out/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeRCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">C:\mana25\genesis\Native\out\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">Building Custom Rule C:/mana25/genesis/Native/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">setlocal
+C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\bin\cmake.exe -SC:/mana25/genesis/Native -BC:/mana25/genesis/Native/out --check-stamp-file C:/mana25/genesis/Native/out/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeCommonLanguageInclude.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeGenericSystem.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeInitializeConfigs.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeLanguageInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeRCInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInformation.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\CMakeSystemSpecificInitialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\CMakeCommonCompilerMacros.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Compiler\MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-Initialize.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC-C.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows-MSVC.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\Windows.cmake;C:\ProgramData\chocolatey\lib\cmake.portable\tools\cmake-3.30.0-rc3-windows-x86_64\share\cmake-3.30\Modules\Platform\WindowsPaths.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeRCCompiler.cmake;C:\mana25\genesis\Native\out\CMakeFiles\3.30.0-rc3\CMakeSystem.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">C:\mana25\genesis\Native\out\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\ZERO_CHECK.vcxproj">
+      <Project>{9E114610-D5C4-3D9F-8969-B41DF9B2832D}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\Native.vcxproj">
+      <Project>{B65EB714-220D-3026-BE1C-89141593FF80}</Project>
+      <Name>Native</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross.vcxproj">
+      <Project>{BF37739C-D9CC-3DE0-B075-553C0A655DF3}</Project>
+      <Name>spirv-cross</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-c.vcxproj">
+      <Project>{DD7462D9-194A-3F75-8F09-B4995C2A1F9B}</Project>
+      <Name>spirv-cross-c</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-core.vcxproj">
+      <Project>{A879E480-D8A5-3713-8F9B-43A7C16355E3}</Project>
+      <Name>spirv-cross-core</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-cpp.vcxproj">
+      <Project>{FA8867E5-91EE-30AF-93F5-03D9BB59E59E}</Project>
+      <Name>spirv-cross-cpp</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-glsl.vcxproj">
+      <Project>{22C50AFC-C572-3647-B9E2-D9D60A88E0A8}</Project>
+      <Name>spirv-cross-glsl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-hlsl.vcxproj">
+      <Project>{034C6E22-9A8D-359B-B9BC-729561FCD532}</Project>
+      <Name>spirv-cross-hlsl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-msl.vcxproj">
+      <Project>{DDB58DD5-AA4C-3544-9192-5B3C7B0B225F}</Project>
+      <Name>spirv-cross-msl</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-reflect.vcxproj">
+      <Project>{C4582376-A1FC-3A67-81D8-0C613757621A}</Project>
+      <Name>spirv-cross-reflect</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\mana25\genesis\Native\out\spirvc\spirv-cross-util.vcxproj">
+      <Project>{153939EC-297E-37AD-9B58-ED08278CBD9D}</Project>
+      <Name>spirv-cross-util</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

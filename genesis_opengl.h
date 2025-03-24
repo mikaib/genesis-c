@@ -50,6 +50,10 @@ void gs_opengl_cmd_use_texture(const GsCommandListItem item);
 void gs_opengl_cmd_draw_arrays(const GsCommandListItem item);
 void gs_opengl_cmd_draw_indexed(const GsCommandListItem item);
 void gs_opengl_cmd_set_scissor(const GsCommandListItem item);
+void gs_opengl_cmd_copy_texture(const GsCommandListItem item);
+void gs_opengl_cmd_resolve_texture(const GsCommandListItem item);
+void gs_opengl_cmd_generate_mipmaps(const GsCommandListItem item);
+void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item);
 void gs_opengl_submit(GsBackend *backend, GsCommandList *list);
 
 // bind resources

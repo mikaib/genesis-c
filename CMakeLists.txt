@@ -3,6 +3,7 @@ project(Native C)
 
 set(CMAKE_C_STANDARD 11)
 
+# Genesis headers
 include_directories(.)
 include_directories( SYSTEM "glad/include" )
 
@@ -11,6 +12,7 @@ if(WIN32)
     link_libraries(opengl32)
 endif()
 
+# Genesis files
 add_executable(Native
     glad/src/gl.c
     genesis.c
@@ -19,3 +21,4 @@ add_executable(Native
     genesis_opengl.h
     test.c
 )
+

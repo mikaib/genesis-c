@@ -1,0 +1,21 @@
+# CMake generation dependency list for this directory.
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeCInformation.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeCommonLanguageInclude.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeGenericSystem.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeInitializeConfigs.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeLanguageInformation.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeRCInformation.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeSystemSpecificInformation.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/CMakeSystemSpecificInitialize.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Compiler/CMakeCommonCompilerMacros.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Compiler/MSVC-C.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Compiler/MSVC.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Platform/Windows-Initialize.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Platform/Windows-MSVC-C.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Platform/Windows-MSVC.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Platform/Windows.cmake
+C:/ProgramData/chocolatey/lib/cmake.portable/tools/cmake-3.30.0-rc3-windows-x86_64/share/cmake-3.30/Modules/Platform/WindowsPaths.cmake
+C:/mana25/genesis/Native/CMakeLists.txt
+C:/mana25/genesis/Native/out/CMakeFiles/3.30.0-rc3/CMakeCCompiler.cmake
+C:/mana25/genesis/Native/out/CMakeFiles/3.30.0-rc3/CMakeRCCompiler.cmake
+C:/mana25/genesis/Native/out/CMakeFiles/3.30.0-rc3/CMakeSystem.cmake
