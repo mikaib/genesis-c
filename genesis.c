@@ -346,6 +346,7 @@ void gs_use_buffer(GsCommandList *list, GsBuffer *buffer) {
 void gs_use_texture(GsCommandList *list, GsTexture *texture, const int slot) {
     GS_ASSERT(list != NULL);
     GS_ASSERT(texture != NULL);
+    GS_ASSERT_WARN(texture->width <= 4096 && texture->height <= 4096, "Texture size exceeds 4096x4096. This may cause issues on some platforms (especially mobile).");
 
     GsTextureCommand *data = GS_ALLOC(GsTextureCommand);
     data->texture = texture;
