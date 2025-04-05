@@ -146,7 +146,14 @@ GsPipeline *gs_create_pipeline() {
     pipeline->blend_dst = GS_BLEND_FACTOR_ONE;
     pipeline->blend_src = GS_BLEND_FACTOR_ZERO;
     pipeline->blend_op = GS_BLEND_OP_ADD;
+    pipeline->blend_dst_alpha = GS_BLEND_FACTOR_ONE;
+    pipeline->blend_src_alpha = GS_BLEND_FACTOR_ZERO;
+    pipeline->blend_op_alpha = GS_BLEND_OP_ADD;
     pipeline->blend_enabled = GS_FALSE;
+    pipeline->depth_test = GS_FALSE;
+    pipeline->depth_write = GS_TRUE;
+    pipeline->depth_func = GS_DEPTH_FUNC_LESS;
+    pipeline->stencil_test = GS_FALSE;
     pipeline->msaa_samples = 0; // disabled
 
     return pipeline;

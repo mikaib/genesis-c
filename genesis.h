@@ -39,7 +39,12 @@ typedef enum {
 typedef enum {
     GS_ATTRIB_TYPE_UINT8,
     GS_ATTRIB_TYPE_INT16,
-    GS_ATTRIB_TYPE_FLOAT
+    GS_ATTRIB_TYPE_FLOAT,
+    GS_ATTRIB_TYPE_UINT16,
+    GS_ATTRIB_TYPE_UINT32,
+    GS_ATTRIB_TYPE_INT32,
+    GS_ATTRIB_TYPE_INT8,
+    GS_ATTRIB_TYPE_DOUBLE,
 } GsVtxAttribType;
 
 typedef enum {
@@ -155,6 +160,17 @@ typedef enum {
     GS_BLEND_OP_MAX
 } GsBlendOp;
 
+typedef enum {
+    GS_DEPTH_FUNC_NEVER,
+    GS_DEPTH_FUNC_LESS,
+    GS_DEPTH_FUNC_EQUAL,
+    GS_DEPTH_FUNC_LESS_EQUAL,
+    GS_DEPTH_FUNC_GREATER,
+    GS_DEPTH_FUNC_NOT_EQUAL,
+    GS_DEPTH_FUNC_GREATER_EQUAL,
+    GS_DEPTH_FUNC_ALWAYS
+} GsDepthFunc;
+
 typedef int GsUniformLocation;
 
 typedef struct GsBackend GsBackend;
@@ -265,14 +281,29 @@ typedef struct GsCommandList {
     int count;
 } GsCommandList;
 
+
 typedef struct GsPipeline {
+    // general state
     GsVtxLayout *layout;
     GsProgram *program;
+    int msaa_samples;
+
+    // blend
+    GsBlendOp blend_op;
     GsBlendFactor blend_src;
     GsBlendFactor blend_dst;
-    GsBlendOp blend_op;
+    GsBlendOp blend_op_alpha;
+    GsBlendFactor blend_src_alpha;
+    GsBlendFactor blend_dst_alpha;
     GS_BOOL blend_enabled;
-    int msaa_samples;
+
+    // stencil
+    GS_BOOL stencil_test;
+
+    // depth
+    GsDepthFunc depth_func;
+    GS_BOOL depth_write;
+    GS_BOOL depth_test;
 } GsPipeline;
 
 typedef struct GsBuffer {

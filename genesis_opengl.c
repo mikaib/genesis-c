@@ -48,10 +48,26 @@ void *gs_opengl_getproc(const char *name) {
 }
 #endif
 
+#define GS_OPENGL_PIPELINE_CAP(want, current, cap) \
+    if (want != current) { \
+        if (want) { \
+            glEnable(cap); \
+        } else { \
+            glDisable(cap); \
+        } \
+    }\
+    \
+    current = want;
+
 static const int gs_opengl_attrib_types[] = {
     [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
     [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
-    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE
+    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE,
+    [GS_ATTRIB_TYPE_UINT16] = GL_UNSIGNED_SHORT,
+    [GS_ATTRIB_TYPE_UINT32] = GL_UNSIGNED_INT,
+    [GS_ATTRIB_TYPE_INT32]  = GL_INT,
+    [GS_ATTRIB_TYPE_INT8]   = GL_BYTE,
+    [GS_ATTRIB_TYPE_DOUBLE] = GL_DOUBLE,
 };
 
 static const int gs_opengl_face_types[] = {
@@ -149,6 +165,17 @@ static const int gs_opengl_blend_ops[] = {
     [GS_BLEND_OP_MAX]              = GL_MAX
 };
 
+static const int gs_opengl_depth_func[] = {
+    [GS_DEPTH_FUNC_NEVER]         = GL_NEVER,
+    [GS_DEPTH_FUNC_LESS]         = GL_LESS,
+    [GS_DEPTH_FUNC_EQUAL]        = GL_EQUAL,
+    [GS_DEPTH_FUNC_LESS_EQUAL]   = GL_LEQUAL,
+    [GS_DEPTH_FUNC_GREATER]      = GL_GREATER,
+    [GS_DEPTH_FUNC_NOT_EQUAL]    = GL_NOTEQUAL,
+    [GS_DEPTH_FUNC_GREATER_EQUAL] = GL_GEQUAL,
+    [GS_DEPTH_FUNC_ALWAYS]       = GL_ALWAYS
+};
+
 static const GsCommandHandler gs_opengl_commands [] = {
     [GS_COMMAND_CLEAR]               = gs_opengl_cmd_clear,
     [GS_COMMAND_SET_VIEWPORT]        = gs_opengl_cmd_set_viewport,
@@ -185,8 +212,15 @@ GsTexture** requested_textures = NULL;
 GsBlendFactor blend_src = -1;
 GsBlendFactor blend_dst = -1;
 GsBlendOp blend_op = -1;
-GS_BOOL blend_enabled = GS_FALSE;
-GS_BOOL msaa_enabled = GS_FALSE;
+GsBlendFactor blend_src_alpha = -1;
+GsBlendFactor blend_dst_alpha = -1;
+GsBlendOp blend_op_alpha = -1;
+GS_BOOL blend_enabled = -1;
+GsDepthFunc depth_func = -1;
+GS_BOOL depth_write_enabled = -1;
+GS_BOOL depth_test_enabled = -1;
+GS_BOOL stencil_test_enabled = -1;
+GS_BOOL msaa_enabled = -1;
 
 GsBackend *gs_opengl_create() {
     GsBackend *backend = GS_ALLOC(GsBackend);
@@ -419,10 +453,10 @@ void gs_opengl_internal_unbind_buffer(GsBufferType type) {
     switch (type) {
         case GS_BUFFER_TYPE_VERTEX:
             requested_vertex_buffer = NULL;
-        break;
+            break;
         case GS_BUFFER_TYPE_INDEX:
             requested_index_buffer = NULL;
-        break;
+            break;
     }
 }
 
@@ -555,7 +589,7 @@ void gs_opengl_cmd_clear(const GsCommandListItem item) {
     }
 
     glClearColor(cmd->r, cmd->g, cmd->b, cmd->a);
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(flags);
 }
 
 void gs_opengl_cmd_set_viewport(const GsCommandListItem item) {
@@ -570,23 +604,32 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
     gs_opengl_internal_bind_program(pipeline->program);
     gs_opengl_internal_bind_layout(pipeline->layout);
 
-    if (pipeline->blend_enabled != blend_enabled) {
-        if (pipeline->blend_enabled) {
-            glEnable(GL_BLEND);
-        } else {
-            glDisable(GL_BLEND);
-        }
+    GS_OPENGL_PIPELINE_CAP(pipeline->blend_enabled, blend_enabled, GL_BLEND);
+    GS_OPENGL_PIPELINE_CAP(pipeline->depth_test, depth_test_enabled, GL_DEPTH_TEST);
+    GS_OPENGL_PIPELINE_CAP(pipeline->stencil_test, stencil_test_enabled, GL_STENCIL_TEST);
 
-        blend_enabled = pipeline->blend_enabled;
-    }
-
-    if (pipeline->blend_src != blend_src || pipeline->blend_dst != blend_dst || pipeline->blend_op != blend_op) {
-        glBlendFunc(gs_opengl_get_blend_factor(pipeline->blend_src), gs_opengl_get_blend_factor(pipeline->blend_dst));
-        glBlendEquation(gs_opengl_get_blend_op(pipeline->blend_op));
+    if (
+        pipeline->blend_dst != blend_dst || pipeline->blend_dst_alpha != blend_dst_alpha ||
+        pipeline->blend_src != blend_src || pipeline->blend_src_alpha != blend_src_alpha ||
+        pipeline->blend_op != blend_op || pipeline->blend_op_alpha != blend_op_alpha
+    ) {
+        glBlendFuncSeparate(
+            gs_opengl_get_blend_factor(pipeline->blend_src),
+            gs_opengl_get_blend_factor(pipeline->blend_dst),
+            gs_opengl_get_blend_factor(pipeline->blend_src_alpha),
+            gs_opengl_get_blend_factor(pipeline->blend_dst_alpha)
+        );
+        glBlendEquationSeparate(
+            gs_opengl_get_blend_op(pipeline->blend_op),
+            gs_opengl_get_blend_op(pipeline->blend_op_alpha)
+        );
 
         blend_src = pipeline->blend_src;
         blend_dst = pipeline->blend_dst;
+        blend_src_alpha = pipeline->blend_src_alpha;
+        blend_dst_alpha = pipeline->blend_dst_alpha;
         blend_op = pipeline->blend_op;
+        blend_op_alpha = pipeline->blend_op_alpha;
     }
 
     if (pipeline->msaa_samples > 0 && !msaa_enabled) {
@@ -597,6 +640,21 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
     if (pipeline->msaa_samples == 0 && msaa_enabled) {
         glDisable(GL_MULTISAMPLE);
         msaa_enabled = GS_FALSE;
+    }
+
+    if (pipeline->depth_write != depth_write_enabled) {
+        if (pipeline->depth_write) {
+            glDepthMask(GL_TRUE);
+        } else {
+            glDepthMask(GL_FALSE);
+        }
+
+        depth_write_enabled = pipeline->depth_write;
+    }
+
+    if (pipeline->depth_func != depth_func) {
+        glDepthFunc(gs_opengl_get_depth_func(pipeline->depth_func));
+        depth_func = pipeline->depth_func;
     }
 }
 
@@ -802,6 +860,13 @@ int gs_opengl_get_texture_filter(GsTextureFilter filter) {
     return gs_opengl_texture_filters[filter];
 }
 
+int gs_opengl_get_depth_func(GsDepthFunc func) {
+    GS_ASSERT(func >= 0);
+    GS_ASSERT(func < GS_TABLE_SIZE(gs_opengl_depth_func));
+
+    return gs_opengl_depth_func[func];
+}
+
 void gs_opengl_create_texture(GsTexture *texture) {
     GS_ASSERT(texture != NULL);
 
@@ -828,9 +893,11 @@ void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *da
     switch (texture->type) {
         case GS_TEXTURE_TYPE_2D:
             glTexImage2D(GL_TEXTURE_2D, 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
+            break;
         case GS_TEXTURE_TYPE_CUBEMAP:
             glTexImage2D(gs_opengl_get_face_type(face), 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
             glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
+            break;
     }
 }
 

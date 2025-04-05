@@ -86,9 +86,14 @@ int gs_opengl_get_buffer_type(GsBufferType type);
 int gs_opengl_get_buffer_intent(GsBufferIntent intent);
 int gs_opengl_get_attrib_type(GsVtxAttribType type);
 int gs_opengl_get_face_type(GsCubemapFace face);
+int gs_opengl_get_texture_format(GsTextureFormat format);
 int gs_opengl_get_texture_type(GsTextureType type);
 int gs_opengl_get_texture_wrap(GsTextureWrap wrap);
 int gs_opengl_get_texture_filter(GsTextureFilter filter);
+int gs_opengl_get_depth_func(GsDepthFunc func);
+int gs_opengl_get_blend_factor(GsBlendFactor factor);
+int gs_opengl_get_blend_op(GsBlendOp op);
+int gs_opengl_get_texture_format(GsTextureFormat format);
 
 // platform
 void *gs_opengl_getproc(const char *name);
