@@ -55,6 +55,7 @@ typedef enum {
     GS_COMMAND_USE_PIPELINE,
     GS_COMMAND_USE_BUFFER,
     GS_COMMAND_USE_TEXTURE,
+    GS_COMMAND_USE_FRAMEBUFFER,
     GS_COMMAND_DRAW_ARRAYS,
     GS_COMMAND_DRAW_INDEXED,
     GS_COMMAND_SET_SCISSOR,
@@ -172,8 +173,14 @@ typedef enum {
     GS_DEPTH_FUNC_ALWAYS
 } GsDepthFunc;
 
-typedef int GsUniformLocation;
+typedef enum {
+    GS_FRAMEBUFFER_ATTACHMENT_COLOR,
+    GS_FRAMEBUFFER_ATTACHMENT_DEPTH,
+    GS_FRAMEBUFFER_ATTACHMENT_STENCIL,
+    GS_FRAMEBUFFER_ATTACHMENT_DEPTH_STENCIL
+} GsFramebufferAttachmentType;
 
+typedef int GsUniformLocation;
 typedef struct GsBackend GsBackend;
 typedef struct GsConfig GsConfig;
 typedef struct GsVtxLayout GsVtxLayout;
@@ -185,6 +192,7 @@ typedef struct GsShader GsShader;
 typedef struct GsProgram GsProgram;
 typedef struct GsBuffer GsBuffer;
 typedef struct GsTexture GsTexture;
+typedef struct GsFramebuffer GsFramebuffer;
 typedef struct GsUnmanagedBufferData GsUnmanagedBufferData;
 typedef struct GsClearCommand GsClearCommand;
 typedef struct GsViewportCommand GsViewportCommand;
@@ -247,7 +255,13 @@ typedef struct GsBackend {
     void (*create_texture_handle)(GsTexture *texture);
     void (*set_texture_data)(GsTexture *texture, GsCubemapFace face, void *data);
     void (*generate_mipmaps)(GsTexture *texture);
+    void (*clear_texture)(GsTexture *texture);
     void (*destroy_texture_handle)(GsTexture *texture);
+
+    // framebuffer
+    void (*create_framebuffer)(GsFramebuffer *framebuffer);
+    void (*destroy_framebuffer)(GsFramebuffer *framebuffer);
+    void (*framebuffer_attach_texture)(GsFramebuffer *framebuffer, GsTexture *texture, GsFramebufferAttachmentType attachment);
 } GsBackend;
 
 typedef struct GsVtxLayoutItem {
@@ -282,7 +296,6 @@ typedef struct GsCommandList {
     int count;
 } GsCommandList;
 
-
 typedef struct GsPipeline {
     // general state
     GsVtxLayout *layout;
@@ -312,6 +325,16 @@ typedef struct GsBuffer {
     GsBufferIntent intent;
     void *handle;
 } GsBuffer;
+
+typedef struct GsFramebuffer {
+    void *handle;
+    int width;
+    int height;
+} GsFramebuffer;
+
+typedef struct GsFramebufferCommand {
+    GsFramebuffer *framebuffer;
+} GsFramebufferCommand;
 
 typedef struct GsUnmanagedBufferData {
     void *data;
@@ -471,6 +494,7 @@ GsTexture *gs_create_cubemap(int width, int height, GsTextureFormat format, GsTe
 void gs_texture_set_data(GsTexture *texture, void *data);
 void gs_texture_set_face_data(GsTexture *texture, GsCubemapFace face, void *data);
 void gs_texture_generate_mipmaps(GsTexture *texture);
+void gs_texture_clear(GsTexture *texture);
 void gs_destroy_texture(GsTexture *texture);
 
 // Shaders
@@ -488,6 +512,11 @@ void gs_destroy_program(GsProgram *program);
 GsPipeline *gs_create_pipeline();
 void gs_destroy_pipeline(GsPipeline *pipeline);
 void gs_pipeline_set_layout(GsPipeline *pipeline, GsVtxLayout *layout);
+
+// Framebuffers
+GsFramebuffer *gs_create_framebuffer(int width, int height);
+void gs_destroy_framebuffer(GsFramebuffer *framebuffer);
+void gs_framebuffer_attach_texture(GsFramebuffer *framebuffer,  GsTexture *texture, GsFramebufferAttachmentType type);
 
 // Buffers
 GsBuffer *gs_create_buffer(GsBufferType type, GsBufferIntent intent);
@@ -507,6 +536,7 @@ void gs_set_viewport(GsCommandList *list, int x, int y, int width, int height);
 void gs_use_pipeline(GsCommandList *list, GsPipeline *pipeline);
 void gs_use_buffer(GsCommandList *list, GsBuffer *buffer);
 void gs_use_texture(GsCommandList *list, GsTexture *texture, int slot);
+void gs_use_framebuffer(GsCommandList *list, GsFramebuffer *framebuffer);
 void gs_set_scissor(GsCommandList *list, int x, int y, int width, int height);
 void gs_disable_scissor(GsCommandList *list);
 void gs_draw_arrays(GsCommandList *list, int start, int count);

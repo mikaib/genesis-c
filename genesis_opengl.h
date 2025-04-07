@@ -48,6 +48,7 @@ void gs_opengl_cmd_set_viewport(const GsCommandListItem item);
 void gs_opengl_cmd_use_pipeline(const GsCommandListItem item);
 void gs_opengl_cmd_use_buffer(const GsCommandListItem item);
 void gs_opengl_cmd_use_texture(const GsCommandListItem item);
+void gs_opengl_cmd_use_framebuffer(const GsCommandListItem item);
 void gs_opengl_cmd_draw_arrays(const GsCommandListItem item);
 void gs_opengl_cmd_draw_indexed(const GsCommandListItem item);
 void gs_opengl_cmd_set_scissor(const GsCommandListItem item);
@@ -68,11 +69,15 @@ void gs_opengl_internal_bind_state();
 void gs_opengl_internal_bind_layout_state();
 void gs_opengl_internal_bind_texture(GsTexture *texture, int slot);
 void gs_opengl_internal_unbind_texture(int slot);
+void gs_opengl_internal_bind_framebuffer(GsFramebuffer *framebuffer);
+void gs_opengl_internal_unbind_framebuffer();
 
 // textures
 void gs_opengl_create_texture(GsTexture *texture);
 void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *data);
 void gs_opengl_generate_mipmaps(GsTexture *texture);
+void gs_opengl_clear_texture(GsTexture *texture);
+void gs_opengl_update_texture_state(GsTexture *texture);
 void gs_opengl_destroy_texture(GsTexture *texture);
 
 // buffer
@@ -94,6 +99,11 @@ int gs_opengl_get_depth_func(GsDepthFunc func);
 int gs_opengl_get_blend_factor(GsBlendFactor factor);
 int gs_opengl_get_blend_op(GsBlendOp op);
 int gs_opengl_get_texture_format(GsTextureFormat format);
+
+// framebuffer
+void gs_opengl_create_framebuffer(GsFramebuffer *framebuffer);
+void gs_opengl_destroy_framebuffer(GsFramebuffer *framebuffer);
+void gs_opengl_framebuffer_attach_texture(GsFramebuffer *framebuffer, GsTexture *texture, GsFramebufferAttachmentType attachment);
 
 // platform
 void *gs_opengl_getproc(const char *name);

@@ -177,23 +177,24 @@ static const int gs_opengl_depth_func[] = {
 };
 
 static const GsCommandHandler gs_opengl_commands [] = {
-    [GS_COMMAND_CLEAR]               = gs_opengl_cmd_clear,
-    [GS_COMMAND_SET_VIEWPORT]        = gs_opengl_cmd_set_viewport,
-    [GS_COMMAND_USE_PIPELINE]        = gs_opengl_cmd_use_pipeline,
-    [GS_COMMAND_USE_BUFFER]          = gs_opengl_cmd_use_buffer,
-    [GS_COMMAND_USE_TEXTURE]         = gs_opengl_cmd_use_texture,
-    [GS_COMMAND_DRAW_ARRAYS]         = gs_opengl_cmd_draw_arrays,
-    [GS_COMMAND_DRAW_INDEXED]        = gs_opengl_cmd_draw_indexed,
-    [GS_COMMAND_SET_SCISSOR]         = gs_opengl_cmd_set_scissor,
-    [GS_COMMAND_SET_UNIFORM_INT]     = gs_opengl_cmd_set_uniform_int,
-    [GS_COMMAND_SET_UNIFORM_FLOAT]   = gs_opengl_cmd_set_uniform_float,
-    [GS_COMMAND_SET_UNIFORM_VEC2]    = gs_opengl_cmd_set_uniform_vec2,
-    [GS_COMMAND_SET_UNIFORM_VEC3]    = gs_opengl_cmd_set_uniform_vec3,
-    [GS_COMMAND_SET_UNIFORM_VEC4]    = gs_opengl_cmd_set_uniform_vec4,
-    [GS_COMMAND_SET_UNIFORM_MAT4]    = gs_opengl_cmd_set_uniform_mat4,
-    [GS_COMMAND_COPY_TEXTURE]        = gs_opengl_cmd_copy_texture,
-    [GS_COMMAND_RESOLVE_TEXTURE]     = gs_opengl_cmd_resolve_texture,
-    [GS_COMMAND_GEN_MIPMAPS]         = gs_opengl_cmd_generate_mipmaps,
+    [GS_COMMAND_CLEAR]                = gs_opengl_cmd_clear,
+    [GS_COMMAND_SET_VIEWPORT]         = gs_opengl_cmd_set_viewport,
+    [GS_COMMAND_USE_PIPELINE]         = gs_opengl_cmd_use_pipeline,
+    [GS_COMMAND_USE_BUFFER]           = gs_opengl_cmd_use_buffer,
+    [GS_COMMAND_USE_TEXTURE]          = gs_opengl_cmd_use_texture,
+    [GS_COMMAND_USE_FRAMEBUFFER]      = gs_opengl_cmd_use_framebuffer,
+    [GS_COMMAND_DRAW_ARRAYS]          = gs_opengl_cmd_draw_arrays,
+    [GS_COMMAND_DRAW_INDEXED]         = gs_opengl_cmd_draw_indexed,
+    [GS_COMMAND_SET_SCISSOR]          = gs_opengl_cmd_set_scissor,
+    [GS_COMMAND_SET_UNIFORM_INT]      = gs_opengl_cmd_set_uniform_int,
+    [GS_COMMAND_SET_UNIFORM_FLOAT]    = gs_opengl_cmd_set_uniform_float,
+    [GS_COMMAND_SET_UNIFORM_VEC2]     = gs_opengl_cmd_set_uniform_vec2,
+    [GS_COMMAND_SET_UNIFORM_VEC3]     = gs_opengl_cmd_set_uniform_vec3,
+    [GS_COMMAND_SET_UNIFORM_VEC4]     = gs_opengl_cmd_set_uniform_vec4,
+    [GS_COMMAND_SET_UNIFORM_MAT4]     = gs_opengl_cmd_set_uniform_mat4,
+    [GS_COMMAND_COPY_TEXTURE]         = gs_opengl_cmd_copy_texture,
+    [GS_COMMAND_RESOLVE_TEXTURE]      = gs_opengl_cmd_resolve_texture,
+    [GS_COMMAND_GEN_MIPMAPS]          = gs_opengl_cmd_generate_mipmaps,
     [GS_COMMAND_COPY_TEXTURE_PARTIAL] = gs_opengl_cmd_copy_texture_partial,
 };
 
@@ -202,12 +203,14 @@ GsBuffer* bound_vertex_buffer = NULL;
 GsBuffer* bound_index_buffer = NULL;
 GsProgram* bound_program = NULL;
 GsVtxLayout* bound_layout = NULL;
+GsFramebuffer* bound_framebuffer = NULL;
 GsTexture** bound_textures = NULL;
 int bound_texture_slot = 0;
 GsBuffer* requested_vertex_buffer = NULL;
 GsBuffer* requested_index_buffer = NULL;
 GsProgram* requested_program = NULL;
 GsVtxLayout* requested_layout = NULL;
+GsFramebuffer* requested_framebuffer = NULL;
 GsTexture** requested_textures = NULL;
 GsBlendFactor blend_src = -1;
 GsBlendFactor blend_dst = -1;
@@ -257,6 +260,12 @@ GsBackend *gs_opengl_create() {
     backend->set_texture_data = gs_opengl_set_texture_data;
     backend->generate_mipmaps = gs_opengl_generate_mipmaps;
     backend->destroy_texture_handle = gs_opengl_destroy_texture;
+    backend->clear_texture = gs_opengl_clear_texture;
+
+    // framebuffer
+    backend->create_framebuffer = gs_opengl_create_framebuffer;
+    backend->destroy_framebuffer = gs_opengl_destroy_framebuffer;
+    backend->framebuffer_attach_texture = gs_opengl_framebuffer_attach_texture;
 
     // init state
     bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
@@ -331,6 +340,18 @@ void gs_opengl_internal_bind_state() {
             bound_textures[i] = requested_textures[i];
         }
     }
+
+    if (bound_framebuffer != requested_framebuffer) {
+        if (requested_framebuffer != NULL) {
+            GLuint* handle = (GLuint*)requested_framebuffer->handle;
+            glBindFramebuffer(GL_FRAMEBUFFER, *handle);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
+        bound_framebuffer = requested_framebuffer;
+    }
+
 }
 
 void gs_opengl_cmd_set_uniform_int(const GsCommandListItem item) {
@@ -447,6 +468,15 @@ void gs_opengl_internal_bind_program(GsProgram *program) {
 
 void gs_opengl_internal_unbind_program() {
     requested_program = NULL;
+}
+
+void gs_opengl_internal_bind_framebuffer(GsFramebuffer *framebuffer) {
+    // NOTE: Framebuffer may be null
+    requested_framebuffer = framebuffer;
+}
+
+void gs_opengl_internal_unbind_framebuffer() {
+    requested_framebuffer = NULL;
 }
 
 void gs_opengl_internal_unbind_buffer(GsBufferType type) {
@@ -594,6 +624,20 @@ void gs_opengl_cmd_clear(const GsCommandListItem item) {
 
 void gs_opengl_cmd_set_viewport(const GsCommandListItem item) {
     const GsViewportCommand *cmd = (GsViewportCommand *) item.data;
+    if (cmd->width <= 0 || cmd->height <= 0) {
+        return;
+    }
+
+    if (bound_framebuffer != requested_framebuffer) {
+        if (requested_framebuffer != NULL) {
+            GLuint* handle = (GLuint*)requested_framebuffer->handle;
+            glBindFramebuffer(GL_FRAMEBUFFER, *handle);
+        } else {
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+        bound_framebuffer = requested_framebuffer;
+    }
+
     glViewport(cmd->x, cmd->y, cmd->width, cmd->height);
 }
 
@@ -661,6 +705,11 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
 void gs_opengl_cmd_use_texture(const GsCommandListItem item) {
     const GsTextureCommand *cmd = (GsTextureCommand *) item.data;
     gs_opengl_internal_bind_texture(cmd->texture, cmd->slot);
+}
+
+void gs_opengl_cmd_use_framebuffer(const GsCommandListItem item) {
+    const GsFramebufferCommand *cmd = (GsFramebufferCommand *) item.data;
+    gs_opengl_internal_bind_framebuffer(cmd->framebuffer);
 }
 
 void gs_opengl_cmd_use_buffer(const GsCommandListItem item) {
@@ -876,13 +925,37 @@ void gs_opengl_create_texture(GsTexture *texture) {
     texture->handle = handle;
 }
 
-void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *data) {
+void gs_opengl_clear_texture(GsTexture *texture) {
     GS_ASSERT(texture != NULL);
-    GS_ASSERT(data != NULL);
 
-    gs_opengl_internal_active_texture(0);
-    glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
-    bound_textures[0] = texture;
+    if (bound_textures[0] != texture) {
+        gs_opengl_internal_active_texture(0);
+        glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
+        bound_textures[0] = texture;
+    }
+
+    gs_opengl_update_texture_state(texture);
+
+    switch (texture->type) {
+        case GS_TEXTURE_TYPE_2D:
+            glTexImage2D(GL_TEXTURE_2D, 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, NULL);
+            break;
+        case GS_TEXTURE_TYPE_CUBEMAP:
+            for (int i = 0; i < 6; i++) {
+                glTexImage2D(gs_opengl_get_face_type(i), 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, NULL);
+            }
+            break;
+    }
+}
+
+void gs_opengl_update_texture_state(GsTexture* texture) {
+    GS_ASSERT(texture != NULL);
+
+    if (bound_textures[0] != texture) {
+        gs_opengl_internal_active_texture(0);
+        glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
+        bound_textures[0] = texture;
+    }
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, gs_opengl_get_texture_wrap(texture->wrap_s));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gs_opengl_get_texture_wrap(texture->wrap_t));
@@ -890,13 +963,29 @@ void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *da
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gs_opengl_get_texture_filter(texture->mag));
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, texture->lodBias);
 
+    if (texture->type == GS_TEXTURE_TYPE_CUBEMAP) {
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
+    }
+}
+
+void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *data) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(data != NULL);
+
+    if (bound_textures[0] != texture) {
+        gs_opengl_internal_active_texture(0);
+        glBindTexture(gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle);
+        bound_textures[0] = texture;
+    }
+
+    gs_opengl_update_texture_state(texture);
+
     switch (texture->type) {
         case GS_TEXTURE_TYPE_2D:
             glTexImage2D(GL_TEXTURE_2D, 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
             break;
         case GS_TEXTURE_TYPE_CUBEMAP:
             glTexImage2D(gs_opengl_get_face_type(face), 0, gs_opengl_get_texture_format(texture->format), texture->width, texture->height, 0, gs_opengl_get_texture_format(texture->format), GL_UNSIGNED_BYTE, data);
-            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
             break;
     }
 }
@@ -918,6 +1007,49 @@ void gs_opengl_generate_mipmaps(GsTexture *texture) {
     bound_textures[0] = texture;
 
     glGenerateMipmap(GL_TEXTURE_2D);
+}
+
+void gs_opengl_create_framebuffer(GsFramebuffer *framebuffer) {
+    GS_ASSERT(framebuffer != NULL);
+
+    GLuint* handle = GS_ALLOC(GLuint);
+    glGenFramebuffers(1, handle);
+
+    framebuffer->handle = handle;
+}
+
+void gs_opengl_framebuffer_attach_texture(GsFramebuffer *framebuffer, GsTexture *texture, GsFramebufferAttachmentType attachment) {
+    GS_ASSERT(framebuffer != NULL);
+    GS_ASSERT(texture != NULL);
+
+    if (bound_framebuffer != framebuffer) {
+        glBindFramebuffer(GL_FRAMEBUFFER, *(GLuint*)framebuffer->handle);
+        bound_framebuffer = framebuffer;
+    }
+
+    switch (attachment) {
+        case GS_FRAMEBUFFER_ATTACHMENT_COLOR:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
+            break;
+        case GS_FRAMEBUFFER_ATTACHMENT_DEPTH:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
+            break;
+        case GS_FRAMEBUFFER_ATTACHMENT_STENCIL:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
+            break;
+        case GS_FRAMEBUFFER_ATTACHMENT_DEPTH_STENCIL:
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
+            break;
+    }
+}
+
+void gs_opengl_destroy_framebuffer(GsFramebuffer *framebuffer) {
+    GS_ASSERT(framebuffer != NULL);
+
+    glDeleteFramebuffers(1, (GLuint*)framebuffer->handle);
+
+    GS_FREE(framebuffer->handle);
+    framebuffer->handle = NULL;
 }
 
 void gs_opengl_destroy_texture(GsTexture *texture) {

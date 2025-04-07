@@ -355,6 +355,16 @@ void gs_use_texture(GsCommandList *list, GsTexture *texture, const int slot) {
     gs_command_list_add(list, GS_COMMAND_USE_TEXTURE, data, sizeof(GsTextureCommand));
 }
 
+void gs_use_framebuffer(GsCommandList *list, GsFramebuffer *framebuffer) {
+    GS_ASSERT(list != NULL);
+    // NOTE: Framebuffer may be null
+
+    GsFramebufferCommand *data = GS_ALLOC(GsFramebufferCommand);
+    data->framebuffer = framebuffer;
+
+    gs_command_list_add(list, GS_COMMAND_USE_FRAMEBUFFER, data, sizeof(GsFramebufferCommand));
+}
+
 void gs_draw_arrays(GsCommandList *list, const int start, const int count) {
     GS_ASSERT(list != NULL);
 
@@ -417,6 +427,38 @@ void gs_destroy_shader(GsShader *shader) {
     active_config->backend->destroy_shader_handle(shader);
 
     GS_FREE(shader);
+}
+
+GsFramebuffer* gs_create_framebuffer(int width, int height) {
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    GsFramebuffer *framebuffer = GS_ALLOC(GsFramebuffer);
+    framebuffer->width = width;
+    framebuffer->height = height;
+    framebuffer->handle = NULL;
+
+    active_config->backend->create_framebuffer(framebuffer);
+    return framebuffer;
+}
+
+void gs_destroy_framebuffer(GsFramebuffer *framebuffer) {
+    GS_ASSERT(framebuffer != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->destroy_framebuffer(framebuffer);
+
+    GS_FREE(framebuffer);
+}
+
+void gs_framebuffer_attach_texture(GsFramebuffer *framebuffer, GsTexture *texture, GsFramebufferAttachmentType attachment) {
+    GS_ASSERT(framebuffer != NULL);
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->framebuffer_attach_texture(framebuffer, texture, attachment);
 }
 
 GsProgram *gs_create_program() {
@@ -527,6 +569,14 @@ void gs_texture_set_data(GsTexture *texture, void *data) {
     GS_ASSERT(active_config->backend != NULL);
 
     active_config->backend->set_texture_data(texture, GS_CUBEMAP_FACE_NONE, data);
+}
+
+void gs_texture_clear(GsTexture *texture) {
+    GS_ASSERT(texture != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->clear_texture(texture);
 }
 
 void gs_texture_set_face_data(GsTexture *texture, const GsCubemapFace face, void *data) {
