@@ -286,7 +286,7 @@ void gs_opengl_internal_active_texture(int slot) {
     }
 }
 
-void gs_opengl_internal_bind_state() {
+static void gs_opengl_bind_vertex_buffer() {
     if (requested_vertex_buffer != bound_vertex_buffer) {
         if (requested_vertex_buffer != NULL) {
             GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_vertex_buffer->handle;
@@ -300,7 +300,9 @@ void gs_opengl_internal_bind_state() {
 
         bound_vertex_buffer = requested_vertex_buffer;
     }
+}
 
+static void gs_opengl_bind_index_buffer() {
     if (requested_index_buffer != bound_index_buffer) {
         if (requested_index_buffer != NULL) {
             GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_index_buffer->handle;
@@ -316,21 +318,27 @@ void gs_opengl_internal_bind_state() {
 
         bound_index_buffer = requested_index_buffer;
     }
+}
 
+static void gs_opengl_bind_program() {
     if (requested_program != bound_program) {
-        GS_ASSERT(requested_program != NULL); // must have a program bound
-
+        GS_ASSERT(requested_program != NULL);
         glUseProgram(*(GLuint*)requested_program->handle);
         bound_program = requested_program;
     }
+}
 
+static void gs_opengl_bind_layout() {
     if (requested_layout != bound_layout) {
         gs_opengl_internal_bind_layout_state();
     }
+}
 
+static void gs_opengl_bind_textures() {
     for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         if (requested_textures[i] != bound_textures[i]) {
             gs_opengl_internal_active_texture(i);
+
             if (requested_textures[i] != NULL) {
                 glBindTexture(GL_TEXTURE_2D, *(GLuint*)requested_textures[i]->handle);
             } else {
@@ -340,7 +348,9 @@ void gs_opengl_internal_bind_state() {
             bound_textures[i] = requested_textures[i];
         }
     }
+}
 
+static void gs_opengl_bind_framebuffer() {
     if (bound_framebuffer != requested_framebuffer) {
         if (requested_framebuffer != NULL) {
             GLuint* handle = (GLuint*)requested_framebuffer->handle;
@@ -351,7 +361,15 @@ void gs_opengl_internal_bind_state() {
 
         bound_framebuffer = requested_framebuffer;
     }
+}
 
+void gs_opengl_internal_bind_state() {
+    gs_opengl_bind_vertex_buffer();
+    gs_opengl_bind_index_buffer();
+    gs_opengl_bind_program();
+    gs_opengl_bind_layout();
+    gs_opengl_bind_textures();
+    gs_opengl_bind_framebuffer();
 }
 
 void gs_opengl_cmd_set_uniform_int(const GsCommandListItem item) {
