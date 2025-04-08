@@ -1,7 +1,6 @@
 # Features:
-- [pipeline] Antialiasing
+- [pipeline] allow non-interleaved vertex data
 - [pipeline] Depth, stencil, blending, mode, culling, front face, wireframe and more probably
-- [framebuffers] framebuffers
 - [commands] instanced rendering
 - [textures] review formats
 - [textures] lod levels

@@ -16,6 +16,34 @@ typedef struct GsOpenGLBufferHandle {
     GsVtxLayout* lastLayout; // be able to tell if layout has changed
 } GsOpenGLBufferHandle;
 
+typedef struct GsOpenGLViewport {
+    int x;
+    int y;
+    int width;
+    int height;
+} GsOpenGLViewport;
+
+typedef struct GsOpenGLColor {
+    float r;
+    float g;
+    float b;
+    float a;
+} GsOpenGLColor;
+
+typedef struct GsOpenGLStateStack {
+    GsBuffer* vertex_buffer;
+    GsBuffer* index_buffer;
+    GsPipeline* pipeline;
+    GsFramebuffer* framebuffer;
+    GsTexture** textures;
+    GsOpenGLViewport viewport;
+} GsOpenGLStateStack;
+
+// state stack
+#define GS_OPENGL_MAX_STATE_STACK 16
+void gs_opengl_push_state();
+void gs_opengl_pop_state();
+
 // creation / destruction
 GsBackend *gs_opengl_create();
 GS_BOOL gs_opengl_init(GsBackend *backend, GsConfig *config);
@@ -44,11 +72,12 @@ void gs_opengl_destroy_layout(GsVtxLayout *layout);
 
 // commands
 void gs_opengl_cmd_clear(const GsCommandListItem item);
-void gs_opengl_cmd_set_viewport(const GsCommandListItem item);
-void gs_opengl_cmd_use_pipeline(const GsCommandListItem item);
+void gs_opengl_cmd_set_viewport(GsCommandListItem item);
+void gs_opengl_cmd_use_pipeline(GsCommandListItem item);
 void gs_opengl_cmd_use_buffer(const GsCommandListItem item);
 void gs_opengl_cmd_use_texture(const GsCommandListItem item);
-void gs_opengl_cmd_use_framebuffer(const GsCommandListItem item);
+void gs_opengl_cmd_begin_render_pass(const GsCommandListItem item);
+void gs_opengl_cmd_end_render_pass(const GsCommandListItem item);
 void gs_opengl_cmd_draw_arrays(const GsCommandListItem item);
 void gs_opengl_cmd_draw_indexed(const GsCommandListItem item);
 void gs_opengl_cmd_set_scissor(const GsCommandListItem item);
@@ -57,6 +86,10 @@ void gs_opengl_cmd_resolve_texture(const GsCommandListItem item);
 void gs_opengl_cmd_generate_mipmaps(const GsCommandListItem item);
 void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item);
 void gs_opengl_submit(GsBackend *backend, GsCommandList *list);
+
+// render pass
+void gs_opengl_create_render_pass(GsRenderPass *pass);
+void gs_opengl_destroy_render_pass(GsRenderPass *pass);
 
 // bind resources
 void gs_opengl_internal_bind_buffer(GsBuffer *buffer);
@@ -67,10 +100,12 @@ void gs_opengl_internal_bind_layout(GsVtxLayout *layout);
 void gs_opengl_internal_unbind_layout();
 void gs_opengl_internal_bind_state();
 void gs_opengl_internal_bind_layout_state();
+void gs_opengl_bind_viewport();
 void gs_opengl_internal_bind_texture(GsTexture *texture, int slot);
 void gs_opengl_internal_unbind_texture(int slot);
 void gs_opengl_internal_bind_framebuffer(GsFramebuffer *framebuffer);
 void gs_opengl_internal_unbind_framebuffer();
+void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline);
 
 // textures
 void gs_opengl_create_texture(GsTexture *texture);

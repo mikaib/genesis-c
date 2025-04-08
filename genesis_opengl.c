@@ -182,7 +182,8 @@ static const GsCommandHandler gs_opengl_commands [] = {
     [GS_COMMAND_USE_PIPELINE]         = gs_opengl_cmd_use_pipeline,
     [GS_COMMAND_USE_BUFFER]           = gs_opengl_cmd_use_buffer,
     [GS_COMMAND_USE_TEXTURE]          = gs_opengl_cmd_use_texture,
-    [GS_COMMAND_USE_FRAMEBUFFER]      = gs_opengl_cmd_use_framebuffer,
+    [GS_COMMAND_BEGIN_PASS]           = gs_opengl_cmd_begin_render_pass,
+    [GS_COMMAND_END_PASS]             = gs_opengl_cmd_end_render_pass,
     [GS_COMMAND_DRAW_ARRAYS]          = gs_opengl_cmd_draw_arrays,
     [GS_COMMAND_DRAW_INDEXED]         = gs_opengl_cmd_draw_indexed,
     [GS_COMMAND_SET_SCISSOR]          = gs_opengl_cmd_set_scissor,
@@ -205,13 +206,17 @@ GsProgram* bound_program = NULL;
 GsVtxLayout* bound_layout = NULL;
 GsFramebuffer* bound_framebuffer = NULL;
 GsTexture** bound_textures = NULL;
+GsOpenGLViewport bound_viewport = { -1, -1, -1, -1 };
+GsOpenGLColor clear_color = { 0.0f, 0.0f, 0.0f,  -1.0f };
 int bound_texture_slot = 0;
+GsPipeline* bound_pipeline = NULL;
 GsBuffer* requested_vertex_buffer = NULL;
 GsBuffer* requested_index_buffer = NULL;
 GsProgram* requested_program = NULL;
 GsVtxLayout* requested_layout = NULL;
 GsFramebuffer* requested_framebuffer = NULL;
 GsTexture** requested_textures = NULL;
+GsOpenGLViewport requested_viewport = { 0, 0, 0, 0 };
 GsBlendFactor blend_src = -1;
 GsBlendFactor blend_dst = -1;
 GsBlendOp blend_op = -1;
@@ -224,6 +229,62 @@ GS_BOOL depth_write_enabled = -1;
 GS_BOOL depth_test_enabled = -1;
 GS_BOOL stencil_test_enabled = -1;
 GS_BOOL msaa_enabled = -1;
+
+GS_BOOL gs_opengl_cmp_viewport(const GsOpenGLViewport a, const GsOpenGLViewport b) {
+    return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
+}
+
+static GsOpenGLStateStack state_stack[GS_OPENGL_MAX_STATE_STACK];
+static int state_stack_index = 0;
+
+void gs_opengl_push_state() {
+    GS_ASSERT(state_stack_index < GS_OPENGL_MAX_STATE_STACK);
+
+    GsTexture** requested_textures_copy = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
+    for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
+        requested_textures_copy[i] = requested_textures[i];
+    }
+
+    GsOpenGLStateStack state = {
+        .vertex_buffer = requested_vertex_buffer,
+        .index_buffer = requested_index_buffer,
+        .pipeline = bound_pipeline,
+        .framebuffer = requested_framebuffer,
+        .textures = requested_textures_copy,
+        .viewport = { requested_viewport.x, requested_viewport.y, requested_viewport.width, requested_viewport.height },
+    };
+
+    state_stack[state_stack_index] = state;
+    state_stack_index++;
+}
+
+void gs_opengl_pop_state() {
+    state_stack_index--;
+    GS_ASSERT(state_stack_index >= 0);
+
+    if (state_stack[state_stack_index].vertex_buffer != NULL) {
+        requested_vertex_buffer = state_stack[state_stack_index].vertex_buffer;
+    }
+
+    if (state_stack[state_stack_index].index_buffer != NULL) {
+        requested_index_buffer = state_stack[state_stack_index].index_buffer;
+    }
+
+    requested_framebuffer = state_stack[state_stack_index].framebuffer; // framebuffer may be null
+    requested_viewport = state_stack[state_stack_index].viewport; // always set
+
+    gs_opengl_bind_viewport();
+
+    for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
+        requested_textures[i] = state_stack[state_stack_index].textures[i];
+    }
+
+    if (bound_pipeline != state_stack[state_stack_index].pipeline && state_stack[state_stack_index].pipeline != NULL) {
+        gs_opengl_internal_bind_pipeline(state_stack[state_stack_index].pipeline);
+    }
+
+    GS_FREE(state_stack[state_stack_index].textures);
+}
 
 GsBackend *gs_opengl_create() {
     GsBackend *backend = GS_ALLOC(GsBackend);
@@ -261,6 +322,10 @@ GsBackend *gs_opengl_create() {
     backend->generate_mipmaps = gs_opengl_generate_mipmaps;
     backend->destroy_texture_handle = gs_opengl_destroy_texture;
     backend->clear_texture = gs_opengl_clear_texture;
+
+    // render pass
+    backend->create_render_pass_handle = gs_opengl_create_render_pass;
+    backend->destroy_render_pass_handle = gs_opengl_destroy_render_pass;
 
     // framebuffer
     backend->create_framebuffer = gs_opengl_create_framebuffer;
@@ -370,6 +435,14 @@ void gs_opengl_internal_bind_state() {
     gs_opengl_bind_layout();
     gs_opengl_bind_textures();
     gs_opengl_bind_framebuffer();
+    gs_opengl_bind_viewport();
+}
+
+void gs_opengl_bind_viewport() {
+    if (!gs_opengl_cmp_viewport(requested_viewport, bound_viewport)) {
+        glViewport(requested_viewport.x, requested_viewport.y, requested_viewport.width, requested_viewport.height);
+        bound_viewport = requested_viewport;
+    }
 }
 
 void gs_opengl_cmd_set_uniform_int(const GsCommandListItem item) {
@@ -636,7 +709,14 @@ void gs_opengl_cmd_clear(const GsCommandListItem item) {
         flags |= GL_STENCIL_BUFFER_BIT;
     }
 
-    glClearColor(cmd->r, cmd->g, cmd->b, cmd->a);
+    if (clear_color.r != cmd->r || clear_color.g != cmd->g || clear_color.b != cmd->b || clear_color.a != cmd->a) {
+        glClearColor(cmd->r, cmd->g, cmd->b, cmd->a);
+        clear_color.r = cmd->r;
+        clear_color.g = cmd->g;
+        clear_color.b = cmd->b;
+        clear_color.a = cmd->a;
+    }
+
     glClear(flags);
 }
 
@@ -656,13 +736,14 @@ void gs_opengl_cmd_set_viewport(const GsCommandListItem item) {
         bound_framebuffer = requested_framebuffer;
     }
 
-    glViewport(cmd->x, cmd->y, cmd->width, cmd->height);
+    requested_viewport.x = cmd->x;
+    requested_viewport.y = cmd->y;
+    requested_viewport.width = cmd->width;
+    requested_viewport.height = cmd->height;
+    gs_opengl_bind_viewport();
 }
 
-void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
-    const GsPipelineCommand *cmd = (GsPipelineCommand *) item.data;
-    const GsPipeline *pipeline = cmd->pipeline;
-
+void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline) {
     gs_opengl_internal_bind_program(pipeline->program);
     gs_opengl_internal_bind_layout(pipeline->layout);
 
@@ -718,6 +799,15 @@ void gs_opengl_cmd_use_pipeline(const GsCommandListItem item) {
         glDepthFunc(gs_opengl_get_depth_func(pipeline->depth_func));
         depth_func = pipeline->depth_func;
     }
+
+    bound_pipeline = pipeline;
+}
+
+void gs_opengl_cmd_use_pipeline(GsCommandListItem item) {
+    const GsPipelineCommand *cmd = (GsPipelineCommand *) item.data;
+    GsPipeline *pipeline = cmd->pipeline;
+
+    gs_opengl_internal_bind_pipeline(pipeline);
 }
 
 void gs_opengl_cmd_use_texture(const GsCommandListItem item) {
@@ -725,9 +815,18 @@ void gs_opengl_cmd_use_texture(const GsCommandListItem item) {
     gs_opengl_internal_bind_texture(cmd->texture, cmd->slot);
 }
 
-void gs_opengl_cmd_use_framebuffer(const GsCommandListItem item) {
-    const GsFramebufferCommand *cmd = (GsFramebufferCommand *) item.data;
-    gs_opengl_internal_bind_framebuffer(cmd->framebuffer);
+void gs_opengl_cmd_begin_render_pass(const GsCommandListItem item) {
+    const GsBeginRenderPassCommand *cmd = (GsBeginRenderPassCommand *) item.data;
+    GS_ASSERT(cmd->pass != NULL);
+
+    gs_opengl_push_state();
+    gs_opengl_internal_bind_framebuffer(cmd->pass->framebuffer);
+}
+
+void gs_opengl_cmd_end_render_pass(const GsCommandListItem item) {
+    const GsEndRenderPassCommand *cmd = (GsEndRenderPassCommand *) item.data;
+
+    gs_opengl_pop_state();
 }
 
 void gs_opengl_cmd_use_buffer(const GsCommandListItem item) {
@@ -806,6 +905,14 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
         const GsCommandHandler handler = gs_opengl_commands[item.type];
         handler(item);
     }
+}
+
+void gs_opengl_create_render_pass(GsRenderPass *pass) {
+    // GL backend does not need to create a render pass
+}
+
+void gs_opengl_destroy_render_pass(GsRenderPass *pass) {
+    // GL backend does not need to destroy a render pass
 }
 
 void gs_opengl_create_shader(GsShader *shader, const char *source) {

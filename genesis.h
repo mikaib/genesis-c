@@ -55,7 +55,6 @@ typedef enum {
     GS_COMMAND_USE_PIPELINE,
     GS_COMMAND_USE_BUFFER,
     GS_COMMAND_USE_TEXTURE,
-    GS_COMMAND_USE_FRAMEBUFFER,
     GS_COMMAND_DRAW_ARRAYS,
     GS_COMMAND_DRAW_INDEXED,
     GS_COMMAND_SET_SCISSOR,
@@ -69,6 +68,8 @@ typedef enum {
     GS_COMMAND_COPY_TEXTURE_PARTIAL,
     GS_COMMAND_RESOLVE_TEXTURE,
     GS_COMMAND_GEN_MIPMAPS,
+    GS_COMMAND_BEGIN_PASS,
+    GS_COMMAND_END_PASS,
 } GsCommandType;
 
 typedef enum {
@@ -212,6 +213,8 @@ typedef struct GsCopyTextureCommand GsCopyTextureCommand;
 typedef struct GsCopyTexturePartialCommand GsCopyTexturePartialCommand;
 typedef struct GsResolveTextureCommand GsResolveTextureCommand;
 typedef struct GsGenMipmapsCommand GsGenMipmapsCommand;
+typedef struct GsBeginRenderPassCommand GsBeginRenderPassCommand;
+typedef struct GsEndRenderPassCommand GsEndRenderPassCommand;
 
 typedef struct GsConfig {
     // config
@@ -222,6 +225,11 @@ typedef struct GsConfig {
     GsCommandList *command_lists[GS_MAX_COMMAND_SUBMISSIONS];
     int command_list_count;
 } GsConfig;
+
+typedef struct GsRenderPass {
+    GsFramebuffer *framebuffer;
+    void *handle;
+} GsRenderPass;
 
 typedef struct GsBackend {
     GsBackendType type;
@@ -257,6 +265,10 @@ typedef struct GsBackend {
     void (*generate_mipmaps)(GsTexture *texture);
     void (*clear_texture)(GsTexture *texture);
     void (*destroy_texture_handle)(GsTexture *texture);
+
+    // render pass
+    void (*create_render_pass_handle)(GsRenderPass *pass);
+    void (*destroy_render_pass_handle)(GsRenderPass *pass);
 
     // framebuffer
     void (*create_framebuffer)(GsFramebuffer *framebuffer);
@@ -331,10 +343,6 @@ typedef struct GsFramebuffer {
     int width;
     int height;
 } GsFramebuffer;
-
-typedef struct GsFramebufferCommand {
-    GsFramebuffer *framebuffer;
-} GsFramebufferCommand;
 
 typedef struct GsUnmanagedBufferData {
     void *data;
@@ -488,6 +496,14 @@ typedef struct GsGenMipmapsCommand {
     GsTexture *texture;
 } GsGenMipmapsCommand;
 
+typedef struct GsBeginRenderPassCommand {
+    GsRenderPass *pass;
+} GsBeginRenderPassCommand;
+
+typedef struct GsEndRenderPassCommand {
+    int dummy;
+} GsEndRenderPassCommand;
+
 // Textures
 GsTexture *gs_create_texture(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureFilter min, GsTextureFilter mag);
 GsTexture *gs_create_cubemap(int width, int height, GsTextureFormat format, GsTextureWrap wrap_s, GsTextureWrap wrap_t, GsTextureWrap wrap_r, GsTextureFilter min, GsTextureFilter mag);
@@ -496,6 +512,10 @@ void gs_texture_set_face_data(GsTexture *texture, GsCubemapFace face, void *data
 void gs_texture_generate_mipmaps(GsTexture *texture);
 void gs_texture_clear(GsTexture *texture);
 void gs_destroy_texture(GsTexture *texture);
+
+// Render Pass
+GsRenderPass *gs_create_render_pass(GsFramebuffer *framebuffer);
+void gs_destroy_render_pass(GsRenderPass *pass);
 
 // Shaders
 GsShader *gs_create_shader(GsShaderType type, const char *source);
@@ -536,7 +556,6 @@ void gs_set_viewport(GsCommandList *list, int x, int y, int width, int height);
 void gs_use_pipeline(GsCommandList *list, GsPipeline *pipeline);
 void gs_use_buffer(GsCommandList *list, GsBuffer *buffer);
 void gs_use_texture(GsCommandList *list, GsTexture *texture, int slot);
-void gs_use_framebuffer(GsCommandList *list, GsFramebuffer *framebuffer);
 void gs_set_scissor(GsCommandList *list, int x, int y, int width, int height);
 void gs_disable_scissor(GsCommandList *list);
 void gs_draw_arrays(GsCommandList *list, int start, int count);
@@ -551,6 +570,8 @@ void gs_copy_texture(GsCommandList *list, GsTexture *src, GsTexture *dst);
 void gs_resolve_texture(GsCommandList *list, GsTexture *src, GsTexture *dst);
 void gs_copy_texture_partial(GsCommandList *list, GsTexture *src, GsTexture *dst, int src_x, int src_y, int dst_x, int dst_y, int width, int height);
 void gs_generate_mipmaps(GsCommandList *list, GsTexture *texture);
+void gs_begin_render_pass(GsCommandList *list, GsRenderPass *pass);
+void gs_end_render_pass(GsCommandList *list);
 void gs_command_list_end(GsCommandList *list);
 void gs_command_list_submit(GsCommandList *list);
 void gs_destroy_command_list(GsCommandList *list);

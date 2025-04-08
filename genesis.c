@@ -355,14 +355,23 @@ void gs_use_texture(GsCommandList *list, GsTexture *texture, const int slot) {
     gs_command_list_add(list, GS_COMMAND_USE_TEXTURE, data, sizeof(GsTextureCommand));
 }
 
-void gs_use_framebuffer(GsCommandList *list, GsFramebuffer *framebuffer) {
+void gs_begin_render_pass(GsCommandList *list, GsRenderPass *pass) {
     GS_ASSERT(list != NULL);
-    // NOTE: Framebuffer may be null
+    GS_ASSERT(pass != NULL);
 
-    GsFramebufferCommand *data = GS_ALLOC(GsFramebufferCommand);
-    data->framebuffer = framebuffer;
+    GsBeginRenderPassCommand *data = GS_ALLOC(GsBeginRenderPassCommand);
+    data->pass = pass;
 
-    gs_command_list_add(list, GS_COMMAND_USE_FRAMEBUFFER, data, sizeof(GsFramebufferCommand));
+    gs_command_list_add(list, GS_COMMAND_BEGIN_PASS, data, sizeof(GsBeginRenderPassCommand));
+}
+
+void gs_end_render_pass(GsCommandList *list) {
+    GS_ASSERT(list != NULL);
+
+    GsEndRenderPassCommand *data = GS_ALLOC(GsEndRenderPassCommand);
+    data->dummy = 0;
+
+    gs_command_list_add(list, GS_COMMAND_END_PASS, data, sizeof(GsEndRenderPassCommand));
 }
 
 void gs_draw_arrays(GsCommandList *list, const int start, const int count) {
@@ -752,6 +761,28 @@ void gs_create_mainloop(void (*mainloop)()) {
 
 void gs_stop_mainloop() {
     mainloop_active = GS_FALSE;
+}
+
+GsRenderPass *gs_create_render_pass(GsFramebuffer* framebuffer) {
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    GsRenderPass *pass = GS_ALLOC(GsRenderPass);
+    pass->framebuffer = framebuffer;
+    pass->handle = NULL;
+
+    active_config->backend->create_render_pass_handle(pass);
+
+    return pass;
+}
+
+void gs_destroy_render_pass(GsRenderPass *pass) {
+    GS_ASSERT(pass != NULL);
+    GS_ASSERT(active_config != NULL);
+    GS_ASSERT(active_config->backend != NULL);
+
+    active_config->backend->destroy_render_pass_handle(pass);
+    GS_FREE(pass);
 }
 
 GS_BOOL gs_has_capability(const GsCapability capability) {
