@@ -59,6 +59,7 @@ void *gs_opengl_getproc(const char *name) {
     \
     current = want;
 
+#if defined(GS_OPENGL_V460)
 static const int gs_opengl_attrib_types[] = {
     [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
     [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
@@ -69,6 +70,20 @@ static const int gs_opengl_attrib_types[] = {
     [GS_ATTRIB_TYPE_INT8]   = GL_BYTE,
     [GS_ATTRIB_TYPE_DOUBLE] = GL_DOUBLE,
 };
+#endif
+
+#if defined(GS_OPENGL_V200ES)
+static const int gs_opengl_attrib_types[] = {
+    [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
+    [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
+    [GS_ATTRIB_TYPE_UINT8]  = GL_UNSIGNED_BYTE,
+    [GS_ATTRIB_TYPE_UINT16] = GL_UNSIGNED_SHORT,
+    [GS_ATTRIB_TYPE_UINT32] = GL_UNSIGNED_INT,
+    [GS_ATTRIB_TYPE_INT32]  = GL_INT,
+    [GS_ATTRIB_TYPE_INT8]   = GL_BYTE,
+    [GS_ATTRIB_TYPE_DOUBLE] = -1,
+};
+#endif
 
 static const int gs_opengl_face_types[] = {
     [GS_CUBEMAP_FACE_UP]    = GL_TEXTURE_CUBE_MAP_POSITIVE_Y,
@@ -84,6 +99,7 @@ static const int gs_opengl_texture_types[] = {
     [GS_TEXTURE_TYPE_CUBEMAP] = GL_TEXTURE_CUBE_MAP
 };
 
+#if defined(GS_OPENGL_V460)
 static const int gs_opengl_texture_formats[] = {
     [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
     [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
@@ -92,6 +108,18 @@ static const int gs_opengl_texture_formats[] = {
     [GS_TEXTURE_FORMAT_DEPTH24_STENCIL8] = GL_DEPTH24_STENCIL8,
     [GS_TEXTURE_FORMAT_DEPTH32F]      = GL_DEPTH_COMPONENT32F
 };
+#endif
+
+#if defined(GS_OPENGL_V200ES)
+static const int gs_opengl_texture_formats[] = {
+    [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
+    [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
+    [GS_TEXTURE_FORMAT_RGB16F]        = -1,
+    [GS_TEXTURE_FORMAT_RGBA16F]       = -1,
+    [GS_TEXTURE_FORMAT_DEPTH24_STENCIL8] = -1,
+    [GS_TEXTURE_FORMAT_DEPTH32F]      = -1,
+};
+#endif
 
 static const int gs_opengl_texture_wraps[] = {
     [GS_TEXTURE_WRAP_REPEAT] = GL_REPEAT,
@@ -157,6 +185,7 @@ static const int gs_opengl_blend_factors[] = {
     [GS_BLEND_FACTOR_SRC_ALPHA_SATURATE]   = GL_SRC_ALPHA_SATURATE
 };
 
+#if defined(GS_OPENGL_V460)
 static const int gs_opengl_blend_ops[] = {
     [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
     [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
@@ -164,6 +193,17 @@ static const int gs_opengl_blend_ops[] = {
     [GS_BLEND_OP_MIN]              = GL_MIN,
     [GS_BLEND_OP_MAX]              = GL_MAX
 };
+#endif
+
+#if defined(GS_OPENGL_V200ES)
+static const int gs_opengl_blend_ops[] = {
+    [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
+    [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
+    [GS_BLEND_OP_REVERSE_SUBTRACT] = GL_FUNC_REVERSE_SUBTRACT,
+    [GS_BLEND_OP_MIN]              = -1,
+    [GS_BLEND_OP_MAX]              = -1
+};
+#endif
 
 static const int gs_opengl_depth_func[] = {
     [GS_DEPTH_FUNC_NEVER]         = GL_NEVER,
@@ -989,14 +1029,19 @@ int gs_opengl_get_blend_op(GsBlendOp op) {
     GS_ASSERT(op >= 0);
     GS_ASSERT(op < GS_TABLE_SIZE(gs_opengl_blend_ops));
 
-    return gs_opengl_blend_ops[op];
+    int res = gs_opengl_blend_ops[op];
+    GS_ASSERT(res != -1);
+
+    return res;
 }
 
 int gs_opengl_get_attrib_type(GsVtxAttribType type) {
     GS_ASSERT(type >= 0);
     GS_ASSERT(type < GS_TABLE_SIZE(gs_opengl_attrib_types));
+    int res = gs_opengl_attrib_types[type];
 
-    return gs_opengl_attrib_types[type];
+    GS_ASSERT(res != -1);
+    return res;
 }
 
 int gs_opengl_get_face_type(GsCubemapFace face) {
@@ -1017,7 +1062,10 @@ int gs_opengl_get_texture_format(GsTextureFormat format) {
     GS_ASSERT(format >= 0);
     GS_ASSERT(format < GS_TABLE_SIZE(gs_opengl_texture_formats));
 
-    return gs_opengl_texture_formats[format];
+    int res = gs_opengl_texture_formats[format];
+    GS_ASSERT(res != -1);
+
+    return res;
 }
 
 int gs_opengl_get_texture_wrap(GsTextureWrap wrap) {
