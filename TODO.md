@@ -12,6 +12,7 @@
 - [shaders] SPIR-V
 - [core] getCapabilities function
 - [core] getSystemCounter function (resources, memory, performance, etc)
+- [caps] populate stuff like what textures formats are supported, attrib types, texture wrap (r) and lod bias. (and more)
 
 # Nice to have:
 - built virtual / augmented reality

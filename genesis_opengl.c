@@ -816,12 +816,16 @@ void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline) {
     }
 
     if (pipeline->msaa_samples > 0 && !msaa_enabled) {
-        glEnable(GL_MULTISAMPLE);
+        #if defined(GS_OPENGL_V460)
+            glEnable(GL_MULTISAMPLE);
+        #endif
         msaa_enabled = GS_TRUE;
     }
 
     if (pipeline->msaa_samples == 0 && msaa_enabled) {
-        glDisable(GL_MULTISAMPLE);
+        #if defined(GS_OPENGL_V460)
+            glDisable(GL_MULTISAMPLE);
+        #endif
         msaa_enabled = GS_FALSE;
     }
 
@@ -1134,11 +1138,14 @@ void gs_opengl_update_texture_state(GsTexture* texture) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, gs_opengl_get_texture_wrap(texture->wrap_t));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gs_opengl_get_texture_filter(texture->min));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gs_opengl_get_texture_filter(texture->mag));
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, texture->lodBias);
 
-    if (texture->type == GS_TEXTURE_TYPE_CUBEMAP) {
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
-    }
+    #if defined(GS_OPENGL_V460)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, texture->maxLevel);
+
+        if (texture->type == GS_TEXTURE_TYPE_CUBEMAP) {
+            glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, gs_opengl_get_texture_wrap(texture->wrap_r));
+        }
+    #endif
 }
 
 void gs_opengl_set_texture_data(GsTexture *texture, GsCubemapFace face, void *data) {
