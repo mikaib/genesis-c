@@ -60,6 +60,34 @@ void *gs_opengl_getproc(const char *name) {
     \
     current = want;
 
+#define GS_OPENGL_GLES2_COPY_TEXTURE_FALLBACK(fboName, src, dst) \
+    static GLuint fboName = 0; \
+    if (fboName == 0) { \
+        glGenFramebuffers(1, &fboName); \
+    } \
+    GLint previous_fbo = 0; \
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_fbo); \
+    glBindFramebuffer(GL_FRAMEBUFFER, fboName); \
+    glFramebufferTexture2D( \
+        GL_FRAMEBUFFER, \
+        GL_COLOR_ATTACHMENT0, \
+        GL_TEXTURE_2D, \
+        *(GLuint*)(src)->handle, \
+        0 \
+    ); \
+    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER); \
+    GS_ASSERT(status == GL_FRAMEBUFFER_COMPLETE); \
+    glBindTexture(GL_TEXTURE_2D, *(GLuint*)(dst)->handle); \
+    glCopyTexSubImage2D( \
+        GL_TEXTURE_2D, \
+        0, \
+        0, 0, \
+        0, 0, \
+        (src)->width, \
+        (src)->height \
+    ); \
+    glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)previous_fbo); \
+
 #if defined(GS_OPENGL_V460)
 static const int gs_opengl_attrib_types[] = {
     [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
@@ -987,38 +1015,7 @@ void gs_opengl_cmd_copy_texture(const GsCommandListItem item) {
     #endif
 
     #if defined(GS_OPENGL_V200ES)
-        static GLuint copy_fbo = 0;
-        if (copy_fbo == 0) {
-            glGenFramebuffers(1, &copy_fbo);
-        }
-
-        GLint previous_fbo = 0;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_fbo);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, copy_fbo);
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0,
-            GL_TEXTURE_2D,
-            *(GLuint*)cmd->src->handle,
-            0
-        );
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        GS_ASSERT(status == GL_FRAMEBUFFER_COMPLETE);
-
-        glBindTexture(GL_TEXTURE_2D, *(GLuint*)cmd->dst->handle);
-
-        glCopyTexSubImage2D(
-            GL_TEXTURE_2D,
-            0,
-            0, 0,
-            0, 0,
-            cmd->src->width,
-            cmd->src->height
-        );
-
-        glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)previous_fbo);
+        GS_OPENGL_GLES2_COPY_TEXTURE_FALLBACK(copy_fbo, cmd->src, cmd->dst);
     #endif
 }
 
@@ -1033,37 +1030,7 @@ void gs_opengl_cmd_resolve_texture(const GsCommandListItem item) {
     #endif
 
     #if defined(GS_OPENGL_V200ES)
-        static GLuint resolve_fbo = 0;
-        if (resolve_fbo == 0) {
-            glGenFramebuffers(1, &resolve_fbo);
-        }
-
-        GLint previous_fbo = 0;
-        glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previous_fbo);
-
-        glBindFramebuffer(GL_FRAMEBUFFER, resolve_fbo);
-        glFramebufferTexture2D(
-            GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0,
-            GL_TEXTURE_2D,
-            *(GLuint*)cmd->src->handle,
-            0
-        );
-
-        GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-        GS_ASSERT(status == GL_FRAMEBUFFER_COMPLETE);
-
-        glBindTexture(GL_TEXTURE_2D, *(GLuint*)cmd->dst->handle);
-        glCopyTexSubImage2D(
-            GL_TEXTURE_2D,
-            0,
-            0, 0,
-            0, 0,
-            cmd->src->width,
-            cmd->src->height
-        );
-
-        glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)previous_fbo);
+        GS_OPENGL_GLES2_COPY_TEXTURE_FALLBACK(resolve_fbo, cmd->src, cmd->dst);
     #endif
 }
 
