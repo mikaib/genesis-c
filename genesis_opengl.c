@@ -3,12 +3,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if defined(__EMSCRIPTEN__)
+    #define GS_OPENGL_PLATFORM_IMPL
+    #define GS_OPENGL_V200ES
+    #include <emscripten.h>
+    #include <GLES2/gl2.h>
+    #include <EGL/egl.h>
+#endif
+
 #if defined(_WIN32)
     #include <windows.h>
     #define GS_OPENGL_PLATFORM_IMPL
     #define GS_OPENGL_USE_GLAD
-    // #define GS_OPENGL_V460
-    #define GS_OPENGL_V200ES
+    #define GS_OPENGL_V460
+    // #define GS_OPENGL_V200ES
     // #define GS_OPENGL_DEBUG
     void *gs_opengl_getproc(const char *name) {
         void *p = (void *) wglGetProcAddress(name);
@@ -21,14 +29,6 @@
 
         return p;
     }
-#endif
-
-#if defined(__EMSCRIPTEN__)
-    #define GS_OPENGL_PLATFORM_IMPL
-    #define GS_OPENGL_V200ES
-    #include <emscripten.h>
-    #include <GLES2/gl2.h>
-    #include <EGL/egl.h>
 #endif
 
 #if defined(__ANDROID__)
