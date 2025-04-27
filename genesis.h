@@ -17,6 +17,14 @@ extern "C"
 
 #define GS_MALLOC(size) malloc(size)
 #define GS_ALLOC_MULTIPLE(obj, count) (obj*)malloc(sizeof(obj) * count)
+
+#if defined(__ANDROID__)
+    #include <android/log.h>
+    #define GS_LOG(...) __android_log_print(ANDROID_LOG_INFO, "Genesis", __VA_ARGS__)
+#else
+    #define GS_LOG(...) printf(__VA_ARGS__)
+#endif
+
 #define GS_ASSERT(cond) if(!(cond)) { printf("Assertion failed: %s, file: %s, line: %d\n", #cond, __FILE__, __LINE__); exit(1); }
 #define GS_ASSERT_WARN(cond, message) if(!(cond)) { printf("Warning: %s, file: %s, line: %d\n", message, __FILE__, __LINE__); }
 #define GS_MEMSET(ptr, value, size) memset(ptr, value, size)

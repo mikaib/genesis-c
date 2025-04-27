@@ -254,7 +254,7 @@ void gs_command_list_submit(GsCommandList *list) {
 }
 
 void gs_handle_internal_command(const GsCommandListItem item) {
-    printf("Genesis unhandled command type: %d\n", item.type);
+    GS_LOG("Genesis unhandled command type: %d\n", item.type);
     // TODO: Implement any internal commands here.
 }
 
