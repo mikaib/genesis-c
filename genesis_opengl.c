@@ -7,8 +7,8 @@
     #include <windows.h>
     #define GS_OPENGL_PLATFORM_IMPL
     #define GS_OPENGL_USE_GLAD
-    // #define GS_OPENGL_V460
-    #define GS_OPENGL_V200ES
+    #define GS_OPENGL_V460
+    // #define GS_OPENGL_V200ES
     // #define GS_OPENGL_DEBUG
     void *gs_opengl_getproc(const char *name) {
         void *p = (void *) wglGetProcAddress(name);
@@ -44,7 +44,7 @@
 
 #ifndef GS_OPENGL_PLATFORM_IMPL
 void *gs_opengl_getproc(const char *name) {
-    printf("gs_opengl_getproc not implemented for platform.\n");
+    GS_LOG("gs_opengl_getproc not implemented for platform.\n");
     return NULL;
 }
 #endif
@@ -804,7 +804,7 @@ void gs_opengl_debug_callback(GLenum source, GLenum type, GLuint id, GLenum seve
         return;
     }
 
-    printf("OpenGL Debug: %s\n", message);
+    GS_LOG("OpenGL Debug: %s\n", message);
 }
 #endif
 
@@ -816,7 +816,7 @@ GS_BOOL gs_opengl_init(GsBackend *backend, GsConfig *config) {
         const int res = gladLoadGL((GLADloadfunc) gs_opengl_getproc);
 
         if (!res) {
-            printf("Failed to load OpenGL\n");
+            GS_LOG("Failed to load OpenGL\n");
             return GS_FALSE;
         }
     #endif
@@ -1055,6 +1055,29 @@ void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item) {
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, cmd->dst_x, cmd->dst_y, cmd->src_x, cmd->src_y, cmd->width, cmd->height);
     #endif
 }
+
+const char *gs_opengl_command_names[] = {
+    "GS_COMMAND_CLEAR",
+    "GS_COMMAND_SET_VIEWPORT",
+    "GS_COMMAND_USE_PIPELINE",
+    "GS_COMMAND_USE_TEXTURE",
+    "GS_COMMAND_USE_BUFFER",
+    "GS_COMMAND_BEGIN_PASS",
+    "GS_COMMAND_END_PASS",
+    "GS_COMMAND_DRAW_ARRAYS",
+    "GS_COMMAND_DRAW_INDEXED",
+    "GS_COMMAND_SET_SCISSOR",
+    "GS_COMMAND_SET_UNIFORM_INT",
+    "GS_COMMAND_SET_UNIFORM_FLOAT",
+    "GS_COMMAND_SET_UNIFORM_VEC2",
+    "GS_COMMAND_SET_UNIFORM_VEC3",
+    "GS_COMMAND_SET_UNIFORM_VEC4",
+    "GS_COMMAND_SET_UNIFORM_MAT4",
+    "GS_COMMAND_COPY_TEXTURE",
+    "GS_COMMAND_RESOLVE_TEXTURE",
+    "GS_COMMAND_GEN_MIPMAPS",
+    "GS_COMMAND_COPY_TEXTURE_PARTIAL"
+};
 
 void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
     GS_ASSERT(backend != NULL);
