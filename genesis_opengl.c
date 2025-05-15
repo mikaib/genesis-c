@@ -36,7 +36,7 @@
     #include <EGL/egl.h>
 #endif
 
-#if defined(__linux__)
+#if defined(__linux__) && !defined(__ANDROID__)
     #define GS_OPENGL_PLATFORM_IMPL
     #define GS_OPENGL_USE_GLAD
     #define GS_OPENGL_V460
