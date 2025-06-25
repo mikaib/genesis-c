@@ -106,6 +106,7 @@ void gs_opengl_internal_unbind_texture(int slot);
 void gs_opengl_internal_bind_framebuffer(GsFramebuffer *framebuffer);
 void gs_opengl_internal_unbind_framebuffer();
 void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline);
+void gs_opengl_internal_restore_buffer(GsBuffer* temp_buffer);
 
 // textures
 void gs_opengl_create_texture(GsTexture *texture);

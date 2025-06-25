@@ -759,6 +759,24 @@ void gs_opengl_create_buffer(GsBuffer *buffer) {
     buffer->handle = (void*)handle;
 }
 
+void gs_opengl_internal_restore_buffer(GsBuffer* temp_buffer) {
+    if (temp_buffer->type == GS_BUFFER_TYPE_VERTEX) {
+        if (bound_vertex_buffer != NULL) {
+            GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+            glBindBuffer(GL_ARRAY_BUFFER, bound_handle->handle);
+        } else {
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+        }
+    } else if (temp_buffer->type == GS_BUFFER_TYPE_INDEX) {
+        if (bound_index_buffer != NULL) {
+            GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_index_buffer->handle;
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bound_handle->handle);
+        } else {
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        }
+    }
+}
+
 void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
     GS_ASSERT(buffer != NULL);
     GS_ASSERT(data != NULL);
@@ -773,21 +791,7 @@ void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
         glBindBuffer(gs_opengl_get_buffer_type(buffer->type), handle->handle);
         glBufferData(gs_opengl_get_buffer_type(buffer->type), size, data, gs_opengl_get_buffer_intent(buffer->intent));
 
-        if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
-            if (bound_vertex_buffer != NULL) {
-                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
-                glBindBuffer(GL_ARRAY_BUFFER, bound_handle->handle);
-            } else {
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-            }
-        } else if (buffer->type == GS_BUFFER_TYPE_INDEX) {
-            if (bound_index_buffer != NULL) {
-                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_index_buffer->handle;
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bound_handle->handle);
-            } else {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-        }
+        gs_opengl_internal_restore_buffer(buffer);
     #endif
 }
 
@@ -806,21 +810,7 @@ void gs_opengl_set_buffer_partial_data(GsBuffer *buffer, void *data, int size, i
         glBindBuffer(gs_opengl_get_buffer_type(buffer->type), handle->handle);
         glBufferSubData(gs_opengl_get_buffer_type(buffer->type), offset, size, data);
 
-        if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
-            if (bound_vertex_buffer != NULL) {
-                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
-                glBindBuffer(GL_ARRAY_BUFFER, bound_handle->handle);
-            } else {
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-            }
-        } else if (buffer->type == GS_BUFFER_TYPE_INDEX) {
-            if (bound_index_buffer != NULL) {
-                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_index_buffer->handle;
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bound_handle->handle);
-            } else {
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-            }
-        }
+        gs_opengl_internal_restore_buffer(buffer);
     #endif
 }
 
