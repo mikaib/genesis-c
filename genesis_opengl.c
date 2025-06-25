@@ -804,7 +804,7 @@ void gs_opengl_set_buffer_partial_data(GsBuffer *buffer, void *data, int size, i
     #if defined(GS_OPENGL_V320ES) || defined(GS_OPENGL_V200ES)
         GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)buffer->handle;
         glBindBuffer(gs_opengl_get_buffer_type(buffer->type), handle->handle);
-        glBufferData(gs_opengl_get_buffer_type(buffer->type), size, data, gs_opengl_get_buffer_intent(buffer->intent));
+        glBufferSubData(gs_opengl_get_buffer_type(buffer->type), offset, size, data);
 
         if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
             if (bound_vertex_buffer != NULL) {
