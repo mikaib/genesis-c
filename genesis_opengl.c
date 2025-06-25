@@ -429,32 +429,6 @@ GsBackend *gs_opengl_create() {
     bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
     requested_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
 
-    GS_LOG("OpenGL backend initialized.\n");
-    const char *glVersion = (const char *) glGetString(GL_VERSION);
-    if (glVersion != NULL) {
-        GS_LOG("OpenGL version: %s\n", glVersion);
-    } else {
-        GS_LOG("OpenGL version not available.\n");
-    }
-    const char *glVendor = (const char *) glGetString(GL_VENDOR);
-    if (glVendor != NULL) {
-        GS_LOG("OpenGL vendor: %s\n", glVendor);
-    } else {
-        GS_LOG("OpenGL vendor not available.\n");
-    }
-    const char *glRenderer = (const char *) glGetString(GL_RENDERER);
-    if (glRenderer != NULL) {
-        GS_LOG("OpenGL renderer: %s\n", glRenderer);
-    } else {
-        GS_LOG("OpenGL renderer not available.\n");
-    }
-    const char *glShadingLanguageVersion = (const char *) glGetString(GL_SHADING_LANGUAGE_VERSION);
-    if (glShadingLanguageVersion != NULL) {
-        GS_LOG("OpenGL shading language version: %s\n", glShadingLanguageVersion);
-    } else {
-        GS_LOG("OpenGL shading language version not available.\n");
-    }
-
     for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         bound_textures[i] = NULL;
         requested_textures[i] = NULL;
