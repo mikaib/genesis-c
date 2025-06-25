@@ -5,10 +5,15 @@
 
 #if defined(__EMSCRIPTEN__)
     #define GS_OPENGL_PLATFORM_IMPL
-    #define GS_OPENGL_V200ES
     #include <emscripten.h>
-    #include <GLES2/gl2.h>
     #include <EGL/egl.h>
+    #if defined(GS_EMSCRIPTEN_GLES3)
+        #define GS_OPENGL_V320ES
+        #include <GLES3/gl3.h>
+    #else
+        #define GS_OPENGL_V200ES
+        #include <GLES2/gl2.h>
+    #endif
 #endif
 
 #if defined(_WIN32)
@@ -30,10 +35,15 @@
 #endif
 
 #if defined(__ANDROID__)
-    #define GS_OPENGL_PLATFORM_IMPL
-    #define GS_OPENGL_V200ES
-    #include <GLES2/gl2.h>
     #include <EGL/egl.h>
+    #define GS_OPENGL_PLATFORM_IMPL
+    #if defined(GS_ANDROID_GLES2)
+        #define GS_OPENGL_V200ES
+        #include <GLES2/gl2.h>
+    #else
+        #define GS_OPENGL_V320ES
+        #include <GLES3/gl3.h>
+    #endif
 #endif
 
 #if defined(__linux__) && !defined(__ANDROID__)
@@ -115,7 +125,7 @@ static const int gs_opengl_attrib_types[] = {
 };
 #endif
 
-#if defined(GS_OPENGL_V200ES)
+#if defined(GS_OPENGL_V200ES) || defined(GS_OPENGL_V320ES)
 static const int gs_opengl_attrib_types[] = {
     [GS_ATTRIB_TYPE_FLOAT]  = GL_FLOAT,
     [GS_ATTRIB_TYPE_INT16]  = GL_SHORT,
@@ -142,7 +152,7 @@ static const int gs_opengl_texture_types[] = {
     [GS_TEXTURE_TYPE_CUBEMAP] = GL_TEXTURE_CUBE_MAP
 };
 
-#if defined(GS_OPENGL_V460)
+#if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
 static const int gs_opengl_texture_formats[] = {
     [GS_TEXTURE_FORMAT_RGBA8]         = GL_RGBA,
     [GS_TEXTURE_FORMAT_RGB8]          = GL_RGB,
@@ -182,7 +192,7 @@ static const int gs_opengl_buffer_types[] = {
     [GS_BUFFER_TYPE_INDEX]  = GL_ELEMENT_ARRAY_BUFFER
 };
 
-#if defined(GS_OPENGL_V460)
+#if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
 static const int gs_opengl_buffer_intents[] = {
     [GS_BUFFER_INTENT_DRAW_STATIC]  = GL_STATIC_DRAW,
     [GS_BUFFER_INTENT_DRAW_DYNAMIC] = GL_DYNAMIC_DRAW,
@@ -228,7 +238,7 @@ static const int gs_opengl_blend_factors[] = {
     [GS_BLEND_FACTOR_SRC_ALPHA_SATURATE]   = GL_SRC_ALPHA_SATURATE
 };
 
-#if defined(GS_OPENGL_V460)
+#if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
 static const int gs_opengl_blend_ops[] = {
     [GS_BLEND_OP_ADD]              = GL_FUNC_ADD,
     [GS_BLEND_OP_SUBTRACT]         = GL_FUNC_SUBTRACT,
@@ -419,6 +429,32 @@ GsBackend *gs_opengl_create() {
     bound_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
     requested_textures = GS_ALLOC_MULTIPLE(GsTexture*, GS_MAX_TEXTURE_SLOTS);
 
+    GS_LOG("OpenGL backend initialized.\n");
+    const char *glVersion = (const char *) glGetString(GL_VERSION);
+    if (glVersion != NULL) {
+        GS_LOG("OpenGL version: %s\n", glVersion);
+    } else {
+        GS_LOG("OpenGL version not available.\n");
+    }
+    const char *glVendor = (const char *) glGetString(GL_VENDOR);
+    if (glVendor != NULL) {
+        GS_LOG("OpenGL vendor: %s\n", glVendor);
+    } else {
+        GS_LOG("OpenGL vendor not available.\n");
+    }
+    const char *glRenderer = (const char *) glGetString(GL_RENDERER);
+    if (glRenderer != NULL) {
+        GS_LOG("OpenGL renderer: %s\n", glRenderer);
+    } else {
+        GS_LOG("OpenGL renderer not available.\n");
+    }
+    const char *glShadingLanguageVersion = (const char *) glGetString(GL_SHADING_LANGUAGE_VERSION);
+    if (glShadingLanguageVersion != NULL) {
+        GS_LOG("OpenGL shading language version: %s\n", glShadingLanguageVersion);
+    } else {
+        GS_LOG("OpenGL shading language version not available.\n");
+    }
+
     for (int i = 0; i < GS_MAX_TEXTURE_SLOTS; i++) {
         bound_textures[i] = NULL;
         requested_textures[i] = NULL;
@@ -435,7 +471,7 @@ void gs_opengl_internal_active_texture(int slot) {
 }
 
 static void gs_opengl_bind_vertex_buffer() {
-    #if defined(GS_OPENGL_V460)
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
     if (requested_vertex_buffer != bound_vertex_buffer) {
         if (requested_vertex_buffer != NULL) {
             GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_vertex_buffer->handle;
@@ -702,7 +738,7 @@ void gs_opengl_create_buffer(GsBuffer *buffer) {
         glCreateBuffers(1, &vbo);
     #endif
 
-    #if defined(GS_OPENGL_V200ES)
+    #if defined(GS_OPENGL_V200ES) || defined(GS_OPENGL_V320ES)
         glGenBuffers(1, &vbo);
     #endif
 
@@ -712,7 +748,7 @@ void gs_opengl_create_buffer(GsBuffer *buffer) {
     handle->lastLayout = NULL;
     handle->lastIndexBuffer = NULL;
 
-    #if defined(GS_OPENGL_V460)
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
         if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
             GLuint vao;
             glGenVertexArrays(1, &vao);
@@ -732,26 +768,26 @@ void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
         glNamedBufferData(((GsOpenGLBufferHandle*)buffer->handle)->handle, size, data, gs_opengl_get_buffer_intent(buffer->intent));
     #endif
 
-    #if defined(GS_OPENGL_V200ES)
-        GsBuffer* current_vtx_buffer = bound_vertex_buffer;
-        GsBuffer* current_idx_buffer = bound_index_buffer;
-
-        gs_opengl_internal_bind_buffer(buffer);
-        gs_opengl_bind_vertex_buffer();
-        gs_opengl_bind_index_buffer();
-
+    #if defined(GS_OPENGL_V320ES) || defined(GS_OPENGL_V200ES)
+        GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)buffer->handle;
+        glBindBuffer(gs_opengl_get_buffer_type(buffer->type), handle->handle);
         glBufferData(gs_opengl_get_buffer_type(buffer->type), size, data, gs_opengl_get_buffer_intent(buffer->intent));
 
-        if (current_vtx_buffer != NULL) {
-            gs_opengl_internal_bind_buffer(current_vtx_buffer);
+        if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
+            if (bound_vertex_buffer != NULL) {
+                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+                glBindBuffer(GL_ARRAY_BUFFER, bound_handle->handle);
+            } else {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+        } else if (buffer->type == GS_BUFFER_TYPE_INDEX) {
+            if (bound_index_buffer != NULL) {
+                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_index_buffer->handle;
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bound_handle->handle);
+            } else {
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            }
         }
-
-        if (current_idx_buffer != NULL) {
-            gs_opengl_internal_bind_buffer(current_idx_buffer);
-        }
-
-        gs_opengl_bind_vertex_buffer();
-        gs_opengl_bind_index_buffer();
     #endif
 }
 
@@ -765,24 +801,26 @@ void gs_opengl_set_buffer_partial_data(GsBuffer *buffer, void *data, int size, i
         glNamedBufferSubData(((GsOpenGLBufferHandle*)buffer->handle)->handle, offset, size, data);
     #endif
 
-    #if defined(GS_OPENGL_V200ES)
-        GsBuffer* current_vtx_buffer = bound_vertex_buffer;
-        GsBuffer* current_idx_buffer = bound_index_buffer;
+    #if defined(GS_OPENGL_V320ES) || defined(GS_OPENGL_V200ES)
+        GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)buffer->handle;
+        glBindBuffer(gs_opengl_get_buffer_type(buffer->type), handle->handle);
+        glBufferData(gs_opengl_get_buffer_type(buffer->type), size, data, gs_opengl_get_buffer_intent(buffer->intent));
 
-        gs_opengl_internal_bind_buffer(buffer);
-        gs_opengl_internal_bind_state();
-
-        glBufferSubData(gs_opengl_get_buffer_type(buffer->type), offset, size, data);
-
-        if (current_vtx_buffer != NULL) {
-            gs_opengl_internal_bind_buffer(current_vtx_buffer);
+        if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
+            if (bound_vertex_buffer != NULL) {
+                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+                glBindBuffer(GL_ARRAY_BUFFER, bound_handle->handle);
+            } else {
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+            }
+        } else if (buffer->type == GS_BUFFER_TYPE_INDEX) {
+            if (bound_index_buffer != NULL) {
+                GsOpenGLBufferHandle *bound_handle = (GsOpenGLBufferHandle*)bound_index_buffer->handle;
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bound_handle->handle);
+            } else {
+                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+            }
         }
-
-        if (current_idx_buffer != NULL) {
-            gs_opengl_internal_bind_buffer(current_idx_buffer);
-        }
-
-        gs_opengl_internal_bind_state();
     #endif
 }
 
@@ -802,7 +840,7 @@ void gs_opengl_destroy_buffer(GsBuffer *buffer) {
     GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)buffer->handle;
     glDeleteBuffers(1, &handle->handle);
 
-    #if defined(GS_OPENGL_V460)
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
         if (buffer->type == GS_BUFFER_TYPE_VERTEX) {
             glDeleteVertexArrays(1, &handle->vaoHandle);
         }
@@ -1006,7 +1044,6 @@ void gs_opengl_cmd_draw_indexed(const GsCommandListItem item) {
     const GsDrawIndexedCommand *cmd = (GsDrawIndexedCommand *) item.data;
 
     gs_opengl_internal_bind_state();
-
     glDrawElements(GL_TRIANGLES, cmd->count, GL_UNSIGNED_INT, 0);
 }
 
@@ -1028,7 +1065,7 @@ void gs_opengl_cmd_copy_texture(const GsCommandListItem item) {
         glCopyImageSubData(*(GLuint*)cmd->src->handle, GL_TEXTURE_2D, 0, 0, 0, 0, *(GLuint*)cmd->dst->handle, GL_TEXTURE_2D, 0, 0, 0, 0, cmd->src->width, cmd->src->height, 1);
     #endif
 
-    #if defined(GS_OPENGL_V200ES)
+    #if defined(GS_OPENGL_V200ES) || defined(GS_OPENGL_V320ES)
         GS_OPENGL_GLES2_COPY_TEXTURE_FALLBACK(copy_fbo, cmd->src, cmd->dst);
     #endif
 }
@@ -1039,7 +1076,7 @@ void gs_opengl_cmd_resolve_texture(const GsCommandListItem item) {
     gs_opengl_internal_bind_texture(cmd->src, 0);
     gs_opengl_internal_bind_texture(cmd->dst, 1);
 
-    #if defined(GS_OPENGL_V460)
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
         glBlitFramebuffer(0, 0, cmd->src->width, cmd->src->height, 0, 0, cmd->dst->width, cmd->dst->height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
     #endif
 
@@ -1065,7 +1102,7 @@ void gs_opengl_cmd_copy_texture_partial(const GsCommandListItem item) {
         glCopyImageSubData(*(GLuint*)cmd->src->handle, GL_TEXTURE_2D, 0, cmd->src_x, cmd->src_y, 0, *(GLuint*)cmd->dst->handle, GL_TEXTURE_2D, 0, cmd->dst_x, cmd->dst_y, 0, cmd->width, cmd->height, 1);
     #endif
 
-    #if defined(GS_OPENGL_V200ES)
+    #if defined(GS_OPENGL_V200ES) || defined(GS_OPENGL_V320ES)
         glCopyTexSubImage2D(GL_TEXTURE_2D, 0, cmd->dst_x, cmd->dst_y, cmd->src_x, cmd->src_y, cmd->width, cmd->height);
     #endif
 }
@@ -1105,6 +1142,14 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
         const GsCommandHandler handler = gs_opengl_commands[item.type];
         handler(item);
     }
+
+    #if defined(GS_OPENGL_LOG_ERRORS)
+        GLenum error = glGetError();
+        while (error != GL_NO_ERROR) {
+            GS_LOG("OpenGL Error: %d\n", error);
+            error = glGetError();
+        }
+    #endif
 }
 
 void gs_opengl_create_render_pass(GsRenderPass *pass) {
@@ -1123,6 +1168,21 @@ void gs_opengl_create_shader(GsShader *shader, const char *source) {
 
     glShaderSource(*handle, 1, &source, NULL);
     glCompileShader(*handle);
+
+    GLint compiled = 0;
+    glGetShaderiv(*handle, GL_COMPILE_STATUS, &compiled);
+    if (!compiled) {
+        GLint logLength = 0;
+        glGetShaderiv(*handle, GL_INFO_LOG_LENGTH, &logLength);
+        if (logLength > 1) {
+            char *log = (char *)GS_ALLOC_MULTIPLE(char, logLength);
+            glGetShaderInfoLog(*handle, logLength, NULL, log);
+            GS_LOG("Shader compile error: %s\n", log);
+            GS_FREE(log);
+        } else {
+            GS_LOG("Shader compile failed with no log.\n");
+        }
+    }
 
     shader->handle = handle;
 }
@@ -1374,7 +1434,7 @@ void gs_opengl_framebuffer_attach_texture(GsFramebuffer *framebuffer, GsTexture 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
             break;
         case GS_FRAMEBUFFER_ATTACHMENT_DEPTH_STENCIL:
-            #if defined(GS_OPENGL_V460)
+            #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
                 glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, gs_opengl_get_texture_type(texture->type), *(GLuint*)texture->handle, 0);
             #endif
 
