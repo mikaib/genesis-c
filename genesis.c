@@ -155,6 +155,9 @@ GsPipeline *gs_create_pipeline() {
     pipeline->depth_func = GS_DEPTH_FUNC_LESS;
     pipeline->stencil_test = GS_FALSE;
     pipeline->msaa_samples = 0; // disabled
+    pipeline->cull_face = GS_FALSE;
+    pipeline->cull_front = GS_WINDING_DIRECTION_CCW;
+    pipeline->primitive_type = GS_PRIMITIVE_TRIANGLES;
 
     return pipeline;
 }

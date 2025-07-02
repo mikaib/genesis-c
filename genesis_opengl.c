@@ -269,6 +269,15 @@ static const int gs_opengl_depth_func[] = {
     [GS_DEPTH_FUNC_ALWAYS]       = GL_ALWAYS
 };
 
+static const int gs_opengl_primitive_types[] = {
+    [GS_PRIMITIVE_POINTS]         = GL_POINTS,
+    [GS_PRIMITIVE_LINES]          = GL_LINES,
+    [GS_PRIMITIVE_LINE_STRIP]     = GL_LINE_STRIP,
+    [GS_PRIMITIVE_TRIANGLES]      = GL_TRIANGLES,
+    [GS_PRIMITIVE_TRIANGLE_STRIP] = GL_TRIANGLE_STRIP,
+    [GS_PRIMITIVE_TRIANGLE_FAN]   = GL_TRIANGLE_FAN
+};
+
 static const GsCommandHandler gs_opengl_commands [] = {
     [GS_COMMAND_CLEAR]                = gs_opengl_cmd_clear,
     [GS_COMMAND_SET_VIEWPORT]         = gs_opengl_cmd_set_viewport,
@@ -317,11 +326,14 @@ GsBlendFactor blend_src_alpha = -1;
 GsBlendFactor blend_dst_alpha = -1;
 GsBlendOp blend_op_alpha = -1;
 GS_BOOL blend_enabled = -1;
+GS_BOOL cull_face_enabled = -1;
 GsDepthFunc depth_func = -1;
 GS_BOOL depth_write_enabled = -1;
 GS_BOOL depth_test_enabled = -1;
 GS_BOOL stencil_test_enabled = -1;
 GS_BOOL msaa_enabled = -1;
+GsWindingDirection cull_front = -1;
+GsPrimitiveType primitive_type = GS_PRIMITIVE_TRIANGLES;
 
 GS_BOOL gs_opengl_cmp_viewport(const GsOpenGLViewport a, const GsOpenGLViewport b) {
     return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
@@ -601,7 +613,7 @@ void gs_opengl_cmd_set_uniform_mat4(const GsCommandListItem item) {
     };
 
     gs_opengl_internal_bind_state();
-    glUniformMatrix4fv(cmd->location, 1, GL_FALSE, mat);
+    glUniformMatrix4fv(cmd->location, 1, GL_TRUE, mat);
 }
 
 void gs_opengl_internal_bind_layout_state() {
@@ -910,6 +922,7 @@ void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline) {
     GS_OPENGL_PIPELINE_CAP(pipeline->blend_enabled, blend_enabled, GL_BLEND);
     GS_OPENGL_PIPELINE_CAP(pipeline->depth_test, depth_test_enabled, GL_DEPTH_TEST);
     GS_OPENGL_PIPELINE_CAP(pipeline->stencil_test, stencil_test_enabled, GL_STENCIL_TEST);
+    GS_OPENGL_PIPELINE_CAP(pipeline->cull_face, cull_face_enabled, GL_CULL_FACE);
 
     if (
         pipeline->blend_dst != blend_dst || pipeline->blend_dst_alpha != blend_dst_alpha ||
@@ -962,6 +975,19 @@ void gs_opengl_internal_bind_pipeline(GsPipeline *pipeline) {
     if (pipeline->depth_func != depth_func) {
         glDepthFunc(gs_opengl_get_depth_func(pipeline->depth_func));
         depth_func = pipeline->depth_func;
+    }
+
+    if (pipeline->cull_front != cull_front) {
+        if (pipeline->cull_front == GS_WINDING_DIRECTION_CW) {
+            glFrontFace(GL_CW);
+        } else {
+            glFrontFace(GL_CCW);
+        }
+        cull_front = pipeline->cull_front;
+    }
+
+    if (pipeline->primitive_type != primitive_type) {
+        primitive_type = pipeline->primitive_type;
     }
 
     bound_pipeline = pipeline;
@@ -1177,6 +1203,22 @@ void gs_opengl_create_program(GsProgram *program) {
     }
 
     glLinkProgram(*(GLuint*)program->handle);
+
+    GLint linked = 0;
+    glGetProgramiv(*(GLuint*)program->handle, GL_LINK_STATUS, &linked);
+
+    if (!linked) {
+        GLint logLength = 0;
+        glGetProgramiv(*(GLuint*)program->handle, GL_INFO_LOG_LENGTH, &logLength);
+        if (logLength > 1) {
+            char *log = (char *)GS_ALLOC_MULTIPLE(char, logLength);
+            glGetProgramInfoLog(*(GLuint*)program->handle, logLength, NULL, log);
+            GS_LOG("Program link error: %s\n", log);
+            GS_FREE(log);
+        } else {
+            GS_LOG("Program link failed with no log.\n");
+        }
+    }
 }
 
 void gs_opengl_destroy_program(GsProgram *program) {
@@ -1271,6 +1313,13 @@ int gs_opengl_get_depth_func(GsDepthFunc func) {
     GS_ASSERT(func < GS_TABLE_SIZE(gs_opengl_depth_func));
 
     return gs_opengl_depth_func[func];
+}
+
+int gs_opengl_get_primitive_type(GsPrimitiveType type) {
+    GS_ASSERT(type >= 0);
+    GS_ASSERT(type < GS_TABLE_SIZE(gs_opengl_primitive_types));
+
+    return gs_opengl_primitive_types[type];
 }
 
 void gs_opengl_create_texture(GsTexture *texture) {

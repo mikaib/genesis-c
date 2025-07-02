@@ -13,7 +13,7 @@ extern "C"
 #define GS_MAX_VERTEX_LAYOUT_ITEMS 128
 #define GS_MAX_TEXTURE_SLOTS 16
 #define GS_MAX_COMMAND_LIST_ITEMS 4096
-#define GS_MAX_COMMAND_SUBMISSIONS 128
+#define GS_MAX_COMMAND_SUBMISSIONS 4096
 
 #define GS_MALLOC(size) malloc(size)
 #define GS_ALLOC_MULTIPLE(obj, count) (obj*)malloc(sizeof(obj) * count)
@@ -189,6 +189,20 @@ typedef enum {
     GS_FRAMEBUFFER_ATTACHMENT_DEPTH_STENCIL
 } GsFramebufferAttachmentType;
 
+typedef enum {
+    GS_PRIMITIVE_POINTS,
+    GS_PRIMITIVE_LINES,
+    GS_PRIMITIVE_LINE_STRIP,
+    GS_PRIMITIVE_TRIANGLES,
+    GS_PRIMITIVE_TRIANGLE_STRIP,
+    GS_PRIMITIVE_TRIANGLE_FAN
+} GsPrimitiveType;
+
+typedef enum {
+    GS_WINDING_DIRECTION_CCW,
+    GS_WINDING_DIRECTION_CW
+} GsWindingDirection;
+
 typedef int GsUniformLocation;
 typedef struct GsBackend GsBackend;
 typedef struct GsConfig GsConfig;
@@ -320,6 +334,7 @@ typedef struct GsPipeline {
     // general state
     GsVtxLayout *layout;
     GsProgram *program;
+    GsPrimitiveType primitive_type;
     int msaa_samples;
 
     // blend
@@ -330,6 +345,10 @@ typedef struct GsPipeline {
     GsBlendFactor blend_src_alpha;
     GsBlendFactor blend_dst_alpha;
     GS_BOOL blend_enabled;
+
+    // culling
+    GS_BOOL cull_face;
+    GsWindingDirection cull_front;
 
     // stencil
     GS_BOOL stencil_test;
