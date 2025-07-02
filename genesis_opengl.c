@@ -768,6 +768,8 @@ void gs_opengl_set_buffer_data(GsBuffer *buffer, void *data, int size) {
     GS_ASSERT(data != NULL);
     GS_ASSERT(size > 0);
 
+    buffer->size = size;
+
     #if defined(GS_OPENGL_V460)
         glNamedBufferData(((GsOpenGLBufferHandle*)buffer->handle)->handle, size, data, gs_opengl_get_buffer_intent(buffer->intent));
     #endif

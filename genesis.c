@@ -182,6 +182,7 @@ GsBuffer *gs_create_buffer(const GsBufferType type, const GsBufferIntent intent)
     buffer->type = type;
     buffer->intent = intent;
     buffer->handle = NULL;
+    buffer->size = 0;
 
     active_config->backend->create_buffer_handle(buffer);
 

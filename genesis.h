@@ -362,6 +362,7 @@ typedef struct GsPipeline {
 typedef struct GsBuffer {
     GsBufferType type;
     GsBufferIntent intent;
+    int size;
     void *handle;
 } GsBuffer;
 
