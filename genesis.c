@@ -1,5 +1,6 @@
 #include "genesis.h"
 #include "genesis_opengl.h"
+#include "genesis_noop.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -113,11 +114,15 @@ void gs_destroy_config(GsConfig *config) {
 }
 
 GsBackend *gs_create_backend(const GsBackendType type) {
-    if (type == GS_BACKEND_OPENGL) {
-        return gs_opengl_create();
+    switch (type) {
+        case GS_BACKEND_OPENGL:
+            return gs_opengl_create();
+        case GS_BACKEND_NOOP:
+            return gs_noop_create();
+        default:
+            return NULL;
+            printf("Unknown backend type: %d\n", type);
     }
-
-    return NULL;
 }
 
 void gs_destroy_backend(GsBackend *backend) {
@@ -229,13 +234,32 @@ GsCommandList *gs_create_command_list() {
     GsCommandList *list = GS_ALLOC(GsCommandList);
     list->count = 0;
     list->pipeline = NULL;
+    list->alloc_data = GS_MALLOC(GS_COMMAND_LIST_DATA_SIZE);
+    list->alloc_offset = 0;
 
     return list;
+}
+
+void gs_command_list_alloc_reset(GsCommandList *list) {
+    GS_ASSERT(list != NULL);
+    list->alloc_offset = 0;
+}
+
+void* gs_command_list_alloc(GsCommandList *list, int size) {
+    GS_ASSERT(list != NULL);
+    GS_ASSERT(size > 0);
+    GS_ASSERT(list->alloc_offset + size <= GS_COMMAND_LIST_DATA_SIZE);
+
+    void *data = list->alloc_data + list->alloc_offset;
+    list->alloc_offset += size;
+
+    return data;
 }
 
 void gs_destroy_command_list(GsCommandList *list) {
     GS_ASSERT(list != NULL);
     gs_command_list_clear(list); // Free any remaining data before freeing the list itself.
+    GS_FREE(list->alloc_data);
     GS_FREE(list);
 }
 
@@ -295,17 +319,17 @@ void gs_command_list_clear(GsCommandList *list) {
     GS_ASSERT(list != NULL);
 
     for (int i = 0; i < list->count; i++) {
-        GS_FREE(list->items[i].data);
         list->items[i].data = NULL;
     }
 
     list->count = 0;
+    list->alloc_offset = 0;
 }
 
 void gs_clear(GsCommandList *list, const GsClearFlags flags, const float r, const float g, const float b, const float a) {
     GS_ASSERT(list != NULL);
 
-    GsClearCommand *data = GS_ALLOC(GsClearCommand);
+    GsClearCommand *data = GS_CMD_ALLOC(list, GsClearCommand);
     data->r = r;
     data->g = g;
     data->b = b;
@@ -318,7 +342,7 @@ void gs_clear(GsCommandList *list, const GsClearFlags flags, const float r, cons
 void gs_set_viewport(GsCommandList *list, const int x, const int y, const int w, const int h) {
     GS_ASSERT(list != NULL);
 
-    GsViewportCommand *data = GS_ALLOC(GsViewportCommand);
+    GsViewportCommand *data = GS_CMD_ALLOC(list, GsViewportCommand);
     data->x = x;
     data->y = y;
     data->width = w;
@@ -331,7 +355,7 @@ void gs_use_pipeline(GsCommandList *list, GsPipeline *pipeline) {
     GS_ASSERT(list != NULL);
     GS_ASSERT(pipeline != NULL);
 
-    GsPipelineCommand *data = GS_ALLOC(GsPipelineCommand);
+    GsPipelineCommand *data = GS_CMD_ALLOC(list, GsPipelineCommand);
     data->pipeline = pipeline;
 
     gs_command_list_add(list, GS_COMMAND_USE_PIPELINE, data, sizeof(GsPipelineCommand));
@@ -341,7 +365,7 @@ void gs_use_buffer(GsCommandList *list, GsBuffer *buffer) {
     GS_ASSERT(list != NULL);
     GS_ASSERT(buffer != NULL);
 
-    GsUseBufferCommand *data = GS_ALLOC(GsUseBufferCommand);
+    GsUseBufferCommand *data = GS_CMD_ALLOC(list, GsUseBufferCommand);
     data->buffer = buffer;
 
     gs_command_list_add(list, GS_COMMAND_USE_BUFFER, data, sizeof(GsUseBufferCommand));
@@ -352,7 +376,7 @@ void gs_use_texture(GsCommandList *list, GsTexture *texture, const int slot) {
     GS_ASSERT(texture != NULL);
     GS_ASSERT_WARN(texture->width <= 4096 && texture->height <= 4096, "Texture size exceeds 4096x4096. This may cause issues on some platforms (especially mobile).");
 
-    GsTextureCommand *data = GS_ALLOC(GsTextureCommand);
+    GsTextureCommand *data = GS_CMD_ALLOC(list, GsTextureCommand);
     data->texture = texture;
     data->slot = slot;
 
@@ -363,7 +387,7 @@ void gs_begin_render_pass(GsCommandList *list, GsRenderPass *pass) {
     GS_ASSERT(list != NULL);
     GS_ASSERT(pass != NULL);
 
-    GsBeginRenderPassCommand *data = GS_ALLOC(GsBeginRenderPassCommand);
+    GsBeginRenderPassCommand *data = GS_CMD_ALLOC(list, GsBeginRenderPassCommand);
     data->pass = pass;
 
     gs_command_list_add(list, GS_COMMAND_BEGIN_PASS, data, sizeof(GsBeginRenderPassCommand));
@@ -372,7 +396,7 @@ void gs_begin_render_pass(GsCommandList *list, GsRenderPass *pass) {
 void gs_end_render_pass(GsCommandList *list) {
     GS_ASSERT(list != NULL);
 
-    GsEndRenderPassCommand *data = GS_ALLOC(GsEndRenderPassCommand);
+    GsEndRenderPassCommand *data = GS_CMD_ALLOC(list, GsEndRenderPassCommand);
     data->dummy = 0;
 
     gs_command_list_add(list, GS_COMMAND_END_PASS, data, sizeof(GsEndRenderPassCommand));
@@ -381,7 +405,7 @@ void gs_end_render_pass(GsCommandList *list) {
 void gs_draw_arrays(GsCommandList *list, const int start, const int count) {
     GS_ASSERT(list != NULL);
 
-    GsDrawArraysCommand *data = GS_ALLOC(GsDrawArraysCommand);
+    GsDrawArraysCommand *data = GS_CMD_ALLOC(list, GsDrawArraysCommand);
     data->start = start;
     data->count = count;
 
@@ -391,7 +415,7 @@ void gs_draw_arrays(GsCommandList *list, const int start, const int count) {
 void gs_draw_indexed(GsCommandList *list, const int count) {
     GS_ASSERT(list != NULL);
 
-    GsDrawIndexedCommand *data = GS_ALLOC(GsDrawIndexedCommand);
+    GsDrawIndexedCommand *data = GS_CMD_ALLOC(list, GsDrawIndexedCommand);
     data->count = count;
 
     gs_command_list_add(list, GS_COMMAND_DRAW_INDEXED, data, sizeof(GsDrawIndexedCommand));
@@ -400,7 +424,7 @@ void gs_draw_indexed(GsCommandList *list, const int count) {
 void gs_set_scissor(GsCommandList *list, const int x, const int y, const int w, const int h) {
     GS_ASSERT(list != NULL);
 
-    GsScissorCommand *data = GS_ALLOC(GsScissorCommand);
+    GsScissorCommand *data = GS_CMD_ALLOC(list, GsScissorCommand);
     data->x = x;
     data->y = y;
     data->width = w;
@@ -413,7 +437,7 @@ void gs_set_scissor(GsCommandList *list, const int x, const int y, const int w, 
 void gs_disable_scissor(GsCommandList *list) {
     GS_ASSERT(list != NULL);
 
-    GsScissorCommand *data = GS_ALLOC(GsScissorCommand);
+    GsScissorCommand *data = GS_CMD_ALLOC(list, GsScissorCommand);
     data->enable = GS_FALSE;
 
     gs_command_list_add(list, GS_COMMAND_SET_SCISSOR, data, sizeof(GsScissorCommand));
@@ -612,7 +636,7 @@ void gs_texture_generate_mipmaps(GsTexture *texture) {
 void gs_uniform_set_int(GsCommandList *list, GsUniformLocation location, int value) {
     GS_ASSERT(list != NULL);
 
-    GsUniformIntCommand *data = GS_ALLOC(GsUniformIntCommand);
+    GsUniformIntCommand *data = GS_CMD_ALLOC(list, GsUniformIntCommand);
     data->location = location;
     data->value = value;
 
@@ -622,7 +646,7 @@ void gs_uniform_set_int(GsCommandList *list, GsUniformLocation location, int val
 void gs_uniform_set_float(GsCommandList *list, GsUniformLocation location, float value) {
     GS_ASSERT(list != NULL);
 
-    GsUniformFloatCommand *data = GS_ALLOC(GsUniformFloatCommand);
+    GsUniformFloatCommand *data = GS_CMD_ALLOC(list, GsUniformFloatCommand);
     data->location = location;
     data->value = value;
 
@@ -632,7 +656,7 @@ void gs_uniform_set_float(GsCommandList *list, GsUniformLocation location, float
 void gs_uniform_set_vec2(GsCommandList *list, GsUniformLocation location, float x, float y) {
     GS_ASSERT(list != NULL);
 
-    GsUniformVec2Command *data = GS_ALLOC(GsUniformVec2Command);
+    GsUniformVec2Command *data = GS_CMD_ALLOC(list, GsUniformVec2Command);
     data->location = location;
     data->x = x;
     data->y = y;
@@ -643,7 +667,7 @@ void gs_uniform_set_vec2(GsCommandList *list, GsUniformLocation location, float 
 void gs_uniform_set_vec3(GsCommandList *list, GsUniformLocation location, float x, float y, float z) {
     GS_ASSERT(list != NULL);
 
-    GsUniformVec3Command *data = GS_ALLOC(GsUniformVec3Command);
+    GsUniformVec3Command *data = GS_CMD_ALLOC(list, GsUniformVec3Command);
     data->location = location;
     data->x = x;
     data->y = y;
@@ -655,7 +679,7 @@ void gs_uniform_set_vec3(GsCommandList *list, GsUniformLocation location, float 
 void gs_uniform_set_vec4(GsCommandList *list, GsUniformLocation location, float x, float y, float z, float w) {
     GS_ASSERT(list != NULL);
 
-    GsUniformVec4Command *data = GS_ALLOC(GsUniformVec4Command);
+    GsUniformVec4Command *data = GS_CMD_ALLOC(list, GsUniformVec4Command);
     data->location = location;
     data->x = x;
     data->y = y;
@@ -668,7 +692,7 @@ void gs_uniform_set_vec4(GsCommandList *list, GsUniformLocation location, float 
 void gs_uniform_set_mat4(GsCommandList *list, GsUniformLocation location, float m00, float m01, float m02, float m03, float m10, float m11, float m12, float m13, float m20, float m21, float m22, float m23, float m30, float m31, float m32, float m33) {
     GS_ASSERT(list != NULL);
 
-    GsUniformMat4Command *data = GS_ALLOC(GsUniformMat4Command);
+    GsUniformMat4Command *data = GS_CMD_ALLOC(list, GsUniformMat4Command);
     data->location = location;
     data->m00 = m00;
     data->m01 = m01;
@@ -695,7 +719,7 @@ void gs_copy_texture(GsCommandList *list, GsTexture *src, GsTexture *dst) {
     GS_ASSERT(src != NULL);
     GS_ASSERT(dst != NULL);
 
-    GsCopyTextureCommand *data = GS_ALLOC(GsCopyTextureCommand);
+    GsCopyTextureCommand *data = GS_CMD_ALLOC(list, GsCopyTextureCommand);
     data->src = src;
     data->dst = dst;
 
@@ -707,7 +731,7 @@ void gs_resolve_texture(GsCommandList *list, GsTexture *src, GsTexture *dst) {
     GS_ASSERT(src != NULL);
     GS_ASSERT(dst != NULL);
 
-    GsResolveTextureCommand *data = GS_ALLOC(GsResolveTextureCommand);
+    GsResolveTextureCommand *data = GS_CMD_ALLOC(list, GsResolveTextureCommand);
     data->src = src;
     data->dst = dst;
 
@@ -719,7 +743,7 @@ void gs_copy_texture_partial(GsCommandList *list, GsTexture *src, GsTexture *dst
     GS_ASSERT(src != NULL);
     GS_ASSERT(dst != NULL);
 
-    GsCopyTexturePartialCommand *data = GS_ALLOC(GsCopyTexturePartialCommand);
+    GsCopyTexturePartialCommand *data = GS_CMD_ALLOC(list, GsCopyTexturePartialCommand);
     data->src = src;
     data->dst = dst;
     data->src_x = src_x;
@@ -736,7 +760,7 @@ void gs_generate_mipmaps(GsCommandList *list, GsTexture *texture) {
     GS_ASSERT(list != NULL);
     GS_ASSERT(texture != NULL);
 
-    GsGenMipmapsCommand *data = GS_ALLOC(GsGenMipmapsCommand);
+    GsGenMipmapsCommand *data = GS_CMD_ALLOC(list, GsGenMipmapsCommand);
     data->texture = texture;
 
     gs_command_list_add(list, GS_COMMAND_GEN_MIPMAPS, data, sizeof(GsGenMipmapsCommand));
@@ -795,6 +819,3 @@ GS_BOOL gs_has_capability(const GsCapability capability) {
 
     return (active_config->backend->capabilities & capability) == capability;
 }
-
-
-

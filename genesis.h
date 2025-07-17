@@ -15,6 +15,9 @@ extern "C"
 #define GS_MAX_COMMAND_LIST_ITEMS 4096
 #define GS_MAX_COMMAND_SUBMISSIONS 4096
 
+#define GS_COMMAND_LIST_DATA_SIZE 524288
+#define GS_CMD_ALLOC(list, cmd) (cmd*)gs_command_list_alloc(list, sizeof(cmd))
+
 #define GS_MALLOC(size) malloc(size)
 #define GS_ALLOC_MULTIPLE(obj, count) (obj*)malloc(sizeof(obj) * count)
 
@@ -38,7 +41,8 @@ extern "C"
 #define GS_FALSE 0
 
 typedef enum {
-    GS_BACKEND_OPENGL
+    GS_BACKEND_NOOP = 1,
+    GS_BACKEND_OPENGL = 2
 } GsBackendType;
 
 typedef enum {
@@ -325,6 +329,8 @@ typedef struct GsCommandListItem {
 } GsCommandListItem;
 
 typedef struct GsCommandList {
+    char* alloc_data;
+    int alloc_offset;
     GsCommandListItem items[GS_MAX_COMMAND_LIST_ITEMS];
     GsPipeline *pipeline;
     int count;
@@ -579,6 +585,8 @@ GsCommandList *gs_create_command_list();
 void gs_command_list_begin(GsCommandList *list);
 void gs_command_list_add(GsCommandList *list, GsCommandType type, void *data, int size);
 void gs_command_list_clear(GsCommandList *list);
+void* gs_command_list_alloc(GsCommandList *list, int size);
+void gs_command_list_alloc_reset(GsCommandList *list);
 void gs_clear(GsCommandList *list, GsClearFlags flags, float r, float g, float b, float a);
 void gs_set_viewport(GsCommandList *list, int x, int y, int width, int height);
 void gs_use_pipeline(GsCommandList *list, GsPipeline *pipeline);
