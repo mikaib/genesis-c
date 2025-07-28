@@ -40,11 +40,26 @@ GS_BOOL gs_layout_add(GsVtxLayout *layout, const int index, const GsVtxAttribTyp
         case GS_ATTRIB_TYPE_UINT8:
             item.size_per_item = (int) sizeof(uint8_t);
             break;
+        case GS_ATTRIB_TYPE_INT8:
+            item.size_per_item = (int) sizeof(int8_t);
+            break;
+        case GS_ATTRIB_TYPE_UINT16:
+            item.size_per_item = (int) sizeof(uint16_t);
+            break;
         case GS_ATTRIB_TYPE_INT16:
             item.size_per_item = (int) sizeof(int16_t);
             break;
+        case GS_ATTRIB_TYPE_UINT32:
+            item.size_per_item = (int) sizeof(uint32_t);
+            break;
+        case GS_ATTRIB_TYPE_INT32:
+            item.size_per_item = (int) sizeof(int32_t);
+            break;
         case GS_ATTRIB_TYPE_FLOAT:
             item.size_per_item = (int) sizeof(float);
+            break;
+        case GS_ATTRIB_TYPE_DOUBLE:
+            item.size_per_item = (int) sizeof(double);
             break;
         default:
             return GS_FALSE;

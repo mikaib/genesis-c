@@ -45,6 +45,9 @@
     <inspection_tool class="ComposeUnquotedPorts" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="ConstantConditionalExpressionJS" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="ContinueOrBreakFromFinallyBlockJS" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="CppLocalVariableMayBeConst" enabled="false" level="HINT" enabled_by_default="false" />
+    <inspection_tool class="CppParameterMayBeConst" enabled="false" level="HINT" enabled_by_default="false" />
+    <inspection_tool class="CppParameterMayBeConstPtrOrRef" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="CssDeprecatedValue" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="CssInvalidAtRule" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="CssInvalidCharsetRule" enabled="false" level="WARNING" enabled_by_default="false" />
@@ -398,13 +401,7 @@
     <inspection_tool class="PyOldStyleClassesInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyOverloadsInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyOverridesInspection" enabled="false" level="WARNING" enabled_by_default="false" />
-    <inspection_tool class="PyPackageRequirementsInspection" enabled="false" level="WARNING" enabled_by_default="false">
-      <option name="ignoredPackages">
-        <value>
-          <list size="0" />
-        </value>
-      </option>
-    </inspection_tool>
+    <inspection_tool class="PyPackageRequirementsInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyPandasSeriesToListInspection" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="PyPep8Inspection" enabled="false" level="INFORMATION" enabled_by_default="false" />
     <inspection_tool class="PyPep8NamingInspection" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
