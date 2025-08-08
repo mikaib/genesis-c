@@ -46,7 +46,7 @@
     #endif
 #endif
 
-#if defined(__linux__) && !defined(__ANDROID__)
+#if defined(__linux__) && !defined(__ANDROID__) && !defined(__EMSCRIPTEN__)
     #define GS_OPENGL_PLATFORM_IMPL
     #define GS_OPENGL_USE_GLAD
     #define GS_OPENGL_V460
@@ -58,7 +58,13 @@
             return (void *) eglGetProcAddress(name);
         }
     #else
-        #error "X11 is not supported yet"
+        #include "glad/include/glad/gl.h" // we include glad prematurely to avoid issues
+        #include <X11/Xlib.h>
+        #include <GL/glx.h>
+
+        void *gs_opengl_getproc(const char *name) {
+            return (void *) glXGetProcAddress((const GLubyte *)name);
+        }
     #endif
 #endif
 
@@ -335,6 +341,12 @@ GS_BOOL msaa_enabled = -1;
 GsWindingDirection cull_front = -1;
 GsPrimitiveType primitive_type = GS_PRIMITIVE_TRIANGLES;
 
+#if defined(GS_OPENGL_V200ES)
+GsBuffer* last_vertex_buffer_for_layout = NULL;
+GsVtxLayout* last_layout_for_buffer = NULL;
+#endif
+
+
 GS_BOOL gs_opengl_cmp_viewport(const GsOpenGLViewport a, const GsOpenGLViewport b) {
     return a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height;
 }
@@ -478,13 +490,12 @@ static void gs_opengl_bind_vertex_buffer() {
         if (requested_vertex_buffer != NULL) {
             GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)requested_vertex_buffer->handle;
             glBindBuffer(GL_ARRAY_BUFFER, handle->handle);
-
-            gs_opengl_internal_bind_layout_state();
         } else {
             glBindBuffer(GL_ARRAY_BUFFER, 0);
         }
 
         bound_vertex_buffer = requested_vertex_buffer;
+        last_vertex_buffer_for_layout = NULL;
     }
     #endif
 }
@@ -516,9 +527,19 @@ static void gs_opengl_bind_program() {
 }
 
 static void gs_opengl_bind_layout() {
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
     if (requested_layout != bound_layout) {
         gs_opengl_internal_bind_layout_state();
     }
+    #endif
+
+    #if defined(GS_OPENGL_V200ES)
+    if (requested_layout != bound_layout ||
+        bound_vertex_buffer != last_vertex_buffer_for_layout ||
+        requested_layout != last_layout_for_buffer) {
+        gs_opengl_internal_bind_layout_state();
+    }
+    #endif
 }
 
 static void gs_opengl_bind_textures() {
@@ -617,6 +638,7 @@ void gs_opengl_cmd_set_uniform_mat4(const GsCommandListItem item) {
 }
 
 void gs_opengl_internal_bind_layout_state() {
+    #if defined(GS_OPENGL_V460) || defined(GS_OPENGL_V320ES)
     if (bound_vertex_buffer == NULL) {
         bound_layout = requested_layout;
         return;
@@ -650,7 +672,55 @@ void gs_opengl_internal_bind_layout_state() {
 
         bound_layout = NULL;
     }
+    #endif
+
+    #if defined(GS_OPENGL_V200ES)
+    if (bound_vertex_buffer == NULL) {
+        if (bound_layout != NULL) {
+            for (int i = 0; i < bound_layout->count; i++) {
+                glDisableVertexAttribArray(bound_layout->items[i].index);
+            }
+        }
+        bound_layout = NULL;
+        last_vertex_buffer_for_layout = NULL;
+        last_layout_for_buffer = NULL;
+        return;
+    }
+
+    GsOpenGLBufferHandle *handle = (GsOpenGLBufferHandle*)bound_vertex_buffer->handle;
+    glBindBuffer(GL_ARRAY_BUFFER, handle->handle);
+
+    if (requested_layout != NULL) {
+        if (bound_layout != NULL) {
+            for (int i = 0; i < bound_layout->count; i++) {
+                glDisableVertexAttribArray(bound_layout->items[i].index);
+            }
+        }
+
+        for (int i = 0; i < requested_layout->count; i++) {
+            const GsVtxLayoutItem item = requested_layout->items[i];
+            glVertexAttribPointer(item.index, item.components,
+                gs_opengl_get_attrib_type(item.type), GL_FALSE,
+                requested_layout->stride, (const void*)(uintptr_t)item.offset);
+            glEnableVertexAttribArray(item.index);
+        }
+
+        bound_layout = requested_layout;
+        last_vertex_buffer_for_layout = bound_vertex_buffer;
+        last_layout_for_buffer = requested_layout;
+    } else {
+        if (bound_layout != NULL) {
+            for (int i = 0; i < bound_layout->count; i++) {
+                glDisableVertexAttribArray(bound_layout->items[i].index);
+            }
+        }
+        bound_layout = NULL;
+        last_vertex_buffer_for_layout = NULL;
+        last_layout_for_buffer = NULL;
+    }
+    #endif
 }
+
 
 void gs_opengl_internal_bind_buffer(GsBuffer *buffer) {
     GS_ASSERT(buffer != NULL);
@@ -1029,14 +1099,14 @@ void gs_opengl_cmd_use_buffer(const GsCommandListItem item) {
 void gs_opengl_cmd_draw_arrays(const GsCommandListItem item) {
     const GsDrawArraysCommand *cmd = (GsDrawArraysCommand *) item.data;
     gs_opengl_internal_bind_state();
-    glDrawArrays(GL_TRIANGLES, cmd->start, cmd->count);
+    glDrawArrays(gs_opengl_get_primitive_type(primitive_type), cmd->start, cmd->count);
 }
 
 void gs_opengl_cmd_draw_indexed(const GsCommandListItem item) {
     const GsDrawIndexedCommand *cmd = (GsDrawIndexedCommand *) item.data;
 
     gs_opengl_internal_bind_state();
-    glDrawElements(GL_TRIANGLES, cmd->count, GL_UNSIGNED_INT, 0);
+    glDrawElements(gs_opengl_get_primitive_type(primitive_type), cmd->count, GL_UNSIGNED_INT, 0);
 }
 
 void gs_opengl_cmd_set_scissor(const GsCommandListItem item) {
@@ -1128,6 +1198,7 @@ void gs_opengl_submit(GsBackend *backend, GsCommandList *list) {
 
     for (int i = 0; i < list->count; i++) {
         const GsCommandListItem item = list->items[i];
+
         GS_ASSERT(item.type >= 0);
         GS_ASSERT(item.type < GS_TABLE_SIZE(gs_opengl_commands));
 
